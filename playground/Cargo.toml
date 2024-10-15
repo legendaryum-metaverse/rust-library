@@ -1,0 +1,37 @@
+[package]
+name = "playground"
+version = "0.1.0"
+edition = "2021"
+publish = false  # This prevents accidental publishing of the playground
+
+[dependencies]
+my-awesome-rabbitmq-lib = { path = "../my-awesome-rabbitmq-lib" }
+backoff = { version = "0.4.0", features = ["tokio"] }
+bus = "2.3.0"
+tokio = { version = "1.40.0", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+[[bin]]
+name = "backoff"
+path = "backoff.rs"
+
+[[bin]]
+name = "bus"
+path = "bus.rs"
+
+[[bin]]
+name = "ebus"
+path = "event_bus.rs"
+
+[[bin]]
+name = "gbus"
+path = "generic_event_bus.rs"
+
+[[bin]]
+name = "valid"
+path = "validator.rs"
+
+[[bin]]
+name = "tran"
+path = "transaccional.rs"
