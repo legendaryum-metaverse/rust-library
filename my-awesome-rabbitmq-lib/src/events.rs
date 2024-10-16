@@ -39,6 +39,8 @@ pub enum MicroserviceEvent {
     LegendMissionsCompletedMissionReward,
     #[strum(serialize = "legend_missions.ongoing_mission")]
     LegendMissionsOngoingMission,
+    #[strum(serialize = "legend_rankings.rankings_finished")]
+    LegendRankingsRankingsFinished,
     #[strum(serialize = "room_creator.created_room")]
     RoomCreatorCreatedRoom,
     #[strum(serialize = "room_creator.updated_room")]
@@ -141,31 +143,6 @@ impl PayloadEvent for CoinsUpdateSubscriptionPayload {
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct LegendMissionsCompletedMissionRewardEventPayload {
-    pub user_id: String,
-    pub coins: i32,
-}
-
-impl PayloadEvent for LegendMissionsCompletedMissionRewardEventPayload {
-    fn event_type(&self) -> MicroserviceEvent {
-        MicroserviceEvent::LegendMissionsCompletedMissionReward
-    }
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct LegendMissionsOngoingMissionEventPayload {
-    pub redis_key: String,
-}
-
-impl PayloadEvent for LegendMissionsOngoingMissionEventPayload {
-    fn event_type(&self) -> MicroserviceEvent {
-        MicroserviceEvent::LegendMissionsOngoingMission
-    }
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub struct CoinsNotifyClientPayload {
     pub room: String,
     pub message: HashMap<String, serde_json::Value>,
@@ -189,6 +166,59 @@ pub struct CoinsSendEmailPayload {
 impl PayloadEvent for CoinsSendEmailPayload {
     fn event_type(&self) -> MicroserviceEvent {
         MicroserviceEvent::CoinsSendEmail
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LegendMissionsCompletedMissionRewardEventPayload {
+    pub user_id: String,
+    pub coins: i32,
+}
+
+impl PayloadEvent for LegendMissionsCompletedMissionRewardEventPayload {
+    fn event_type(&self) -> MicroserviceEvent {
+        MicroserviceEvent::LegendMissionsCompletedMissionReward
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LegendMissionsOngoingMissionEventPayload {
+    pub redis_key: String,
+}
+
+impl PayloadEvent for LegendMissionsOngoingMissionEventPayload {
+    fn event_type(&self) -> MicroserviceEvent {
+        MicroserviceEvent::LegendMissionsOngoingMission
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "PascalCase")]
+pub enum RewardType {
+    Legends,
+    CodeExchange,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct RankingWinner {
+    #[serde(rename = "userId")]
+    pub user_id: String,
+    pub reward: i32,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct LegendRankingsRankingsFinishedEventPayload {
+    pub title: String,
+    #[serde(rename = "rewardType")]
+    pub reward_type: RewardType,
+    pub winners: Vec<RankingWinner>,
+}
+
+impl PayloadEvent for LegendRankingsRankingsFinishedEventPayload {
+    fn event_type(&self) -> MicroserviceEvent {
+        MicroserviceEvent::LegendRankingsRankingsFinished
     }
 }
 
