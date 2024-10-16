@@ -1,4 +1,4 @@
-mod commence_saga;
+pub mod commence_saga;
 mod consumers;
 mod emitter;
 pub mod events;
