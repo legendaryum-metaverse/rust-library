@@ -37,6 +37,9 @@ pub enum StepCommand {
     #[strum(serialize = "resource_purchased:deduct_coins")]
     #[serde(rename = "resource_purchased:deduct_coins")]
     ResourcePurchasedDeductCoins,
+    #[strum(serialize = "rankings_users_reward:reward_coins")]
+    #[serde(rename = "rankings_users_reward:reward_coins")]
+    RankingsRewardCoins,
 
     // RoomInventory commands
     #[strum(serialize = "resource_purchased:save_purchased_resource")]
