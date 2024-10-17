@@ -196,24 +196,30 @@ impl PayloadEvent for LegendMissionsOngoingMissionEventPayload {
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "PascalCase")]
-pub enum RewardType {
+pub enum RankingsRewardsType {
     Legends,
     CodeExchange,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct RankingWinner {
-    #[serde(rename = "userId")]
+#[serde(rename_all = "camelCase")]
+pub struct RankingWinners {
     pub user_id: String,
     pub reward: i32,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct LegendRankingsRankingsFinishedEventPayload {
+#[serde(rename_all = "camelCase")]
+pub struct CompletedRanking {
     pub title: String,
-    #[serde(rename = "rewardType")]
-    pub reward_type: RewardType,
-    pub winners: Vec<RankingWinner>,
+    pub reward_type: RankingsRewardsType,
+    pub winners: Vec<RankingWinners>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LegendRankingsRankingsFinishedEventPayload {
+    pub completed_rankings: Vec<CompletedRanking>,
 }
 
 impl PayloadEvent for LegendRankingsRankingsFinishedEventPayload {
