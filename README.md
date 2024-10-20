@@ -27,4 +27,4 @@ Pendientes:
 
 ## Features
 
-Tiene `std` y `events`features flags
+It has `std` y `events`features flags, `std` is the main app, `events = ["serde", "strum", "strum_macros"]` is used to handle types, payloads, enum, struct of the app
