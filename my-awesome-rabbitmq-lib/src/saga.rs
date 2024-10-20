@@ -2,7 +2,6 @@ use crate::emitter::Emitter;
 use crate::my_delivery::MyDelivery;
 use crate::nack::Nack;
 use crate::queue_consumer_props::Queue;
-use crate::{AvailableMicroservices, RabbitMQClient, RabbitMQError};
 use futures_lite::StreamExt;
 use lapin::options::{
     BasicAckOptions, BasicConsumeOptions, BasicNackOptions, BasicPublishOptions, BasicQosOptions,
@@ -16,6 +15,7 @@ use std::collections::HashMap;
 use std::time::Duration;
 use strum_macros::{AsRefStr, Display, EnumIter, EnumString};
 use tracing::error;
+use crate::connection::{AvailableMicroservices, RabbitMQClient, RabbitMQError};
 
 #[derive(
     Debug, Clone, PartialEq, Eq, EnumString, AsRefStr, EnumIter, Serialize, Deserialize, Hash,

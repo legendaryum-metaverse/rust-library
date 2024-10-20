@@ -1,13 +1,13 @@
 use crate::fibo::fibonacci;
 use crate::my_delivery::MyDelivery;
 use crate::queue_consumer_props::Exchange;
-use crate::RabbitMQError;
 use lapin::options::{BasicNackOptions, BasicPublishOptions};
 use lapin::types::{AMQPValue, FieldTable, ShortString};
 use lapin::{BasicProperties, Channel};
 use std::collections::BTreeMap;
 use std::time::Duration;
 use tracing::info;
+use crate::connection::RabbitMQError;
 
 #[derive(Clone)]
 pub(crate) struct Nack {
@@ -158,12 +158,12 @@ impl Nack {
 mod test_nack {
     use crate::events::{AuthLogoutUserPayload, CoinsSendEmailPayload, MicroserviceEvent};
     use crate::test::setup::{Config, TestSetup};
-    use crate::AvailableMicroservices;
     use std::sync::atomic::AtomicUsize;
     use std::sync::Arc;
     use std::time::Duration;
     use tokio::sync::Barrier;
     use tokio::time::timeout;
+    use crate::connection::AvailableMicroservices;
 
     /// Integration test, slow because of nack with fibo, min -> 1 sec
     #[test]

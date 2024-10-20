@@ -1,11 +1,11 @@
 use crate::events::PayloadEvent;
 use crate::queue_consumer_props::Exchange;
-use crate::{RabbitMQClient, RabbitMQError};
 use lapin::{
     options::BasicPublishOptions, options::ExchangeDeclareOptions, types::AMQPValue,
     types::FieldTable, BasicProperties, ExchangeKind,
 };
 use serde::Serialize;
+use crate::connection::{RabbitMQClient, RabbitMQError};
 
 impl RabbitMQClient {
     pub async fn publish_event<T: PayloadEvent + Serialize>(
@@ -59,9 +59,9 @@ mod test_publish_event {
     use crate::events::AuthDeletedUserPayload;
     use crate::events::MicroserviceEvent::AuthDeletedUser;
     use crate::test::setup::{Config, TestSetup};
-    use crate::AvailableMicroservices::Auth;
     use std::sync::Arc;
     use tokio::sync::Barrier;
+    use crate::connection::AvailableMicroservices::Auth;
 
     #[test]
     fn test_publish_event() {

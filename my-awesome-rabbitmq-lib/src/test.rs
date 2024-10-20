@@ -27,7 +27,6 @@ pub(crate) mod setup {
     }
 
     use crate::events::MicroserviceEvent;
-    use crate::{AvailableMicroservices, RabbitMQClient, RabbitMQError};
     use futures::Stream;
     use futures::StreamExt;
     use lapin::options::{
@@ -43,6 +42,7 @@ pub(crate) mod setup {
     use serde::Serialize;
     use std::env;
 
+    use crate::connection::{AvailableMicroservices, RabbitMQClient, RabbitMQError};
     use tokio::runtime::Runtime;
     use tracing::{debug, error, info, Level};
 

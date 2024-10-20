@@ -1,9 +1,9 @@
 use crate::queue_consumer_props::Queue;
-use crate::{RabbitMQClient, RabbitMQError};
 use lapin::options::QueueDeclareOptions;
 use lapin::{options::BasicPublishOptions, types::FieldTable, BasicProperties};
 use serde::{Deserialize, Serialize};
 use strum_macros::{AsRefStr, EnumIter, EnumString};
+use crate::connection::{RabbitMQClient, RabbitMQError};
 
 #[derive(
     Debug, Clone, Copy, AsRefStr, EnumString, PartialEq, EnumIter, Hash, Eq, Deserialize, Serialize,

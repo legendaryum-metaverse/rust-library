@@ -1,6 +1,5 @@
 use crate::events::MicroserviceEvent;
 use crate::queue_consumer_props::{Exchange, QueueConsumerProps};
-use crate::RabbitMQClient;
 use lapin::options::ExchangeBindOptions;
 use lapin::types::AMQPValue;
 use lapin::{
@@ -9,6 +8,7 @@ use lapin::{
     ExchangeKind,
 };
 use strum::IntoEnumIterator;
+use crate::connection::RabbitMQClient;
 
 impl RabbitMQClient {
     pub(crate) async fn create_header_consumers(
