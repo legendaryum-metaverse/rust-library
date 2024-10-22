@@ -199,6 +199,10 @@ pub struct RankingWinners {
 #[serde(rename_all = "camelCase")]
 pub struct CompletedRanking {
     pub title: String,
+    pub description: String,
+    pub author_email: String,
+    pub ends_at: String,
+    pub reward: String,
     pub reward_type: RankingsRewardsType,
     pub winners: Vec<RankingWinners>,
 }
