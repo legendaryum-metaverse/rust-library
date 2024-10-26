@@ -5,14 +5,14 @@ use lapin::{
     types::FieldTable, BasicProperties, ExchangeKind,
 };
 use serde::Serialize;
-use crate::connection::{RabbitMQClient, RabbitMQError};
+use crate::connection::{get_or_init_publish_channel, RabbitMQClient, RabbitMQError};
 
 impl RabbitMQClient {
     pub async fn publish_event<T: PayloadEvent + Serialize>(
-        &self,
         payload: T,
     ) -> Result<(), RabbitMQError> {
-        let channel = self.events_channel.lock().await;
+        let channel_arc = get_or_init_publish_channel().await?;
+        let channel = channel_arc.lock().await;
 
         let event_type = payload.event_type();
         let mut header_event = FieldTable::default();
@@ -62,6 +62,7 @@ mod test_publish_event {
     use std::sync::Arc;
     use tokio::sync::Barrier;
     use crate::connection::AvailableMicroservices::Auth;
+    use crate::connection::RabbitMQClient;
 
     #[test]
     fn test_publish_event() {
@@ -94,9 +95,7 @@ mod test_publish_event {
             })
             .await;
 
-            setup
-                .client
-                .publish_event(auth_deleted_user_payload)
+            RabbitMQClient::publish_event(auth_deleted_user_payload)
                 .await
                 .expect("Error publishing AuthDeletedUserPayload event");
             b_clone.wait().await;

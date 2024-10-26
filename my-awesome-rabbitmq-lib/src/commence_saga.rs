@@ -3,7 +3,7 @@ use lapin::options::QueueDeclareOptions;
 use lapin::{options::BasicPublishOptions, types::FieldTable, BasicProperties};
 use serde::{Deserialize, Serialize};
 use strum_macros::{AsRefStr, EnumIter, EnumString};
-use crate::connection::{RabbitMQClient, RabbitMQError};
+use crate::connection::{get_or_init_publish_channel, RabbitMQClient, RabbitMQError};
 
 #[derive(
     Debug, Clone, Copy, AsRefStr, EnumString, PartialEq, EnumIter, Hash, Eq, Deserialize, Serialize,
@@ -63,8 +63,9 @@ struct CommenceSaga<T> {
 }
 
 impl RabbitMQClient {
-    async fn send<T: Serialize>(&self, queue_name: &str, payload: &T) -> Result<(), RabbitMQError> {
-        let channel = self.saga_channel.lock().await;
+    pub(crate) async fn send<T: Serialize>(queue_name: &str, payload: &T) -> Result<(), RabbitMQError> {
+        let channel_arc = get_or_init_publish_channel().await?;
+        let channel = channel_arc.lock().await;
 
         channel
             .queue_declare(
@@ -94,10 +95,9 @@ impl RabbitMQClient {
         Ok(())
     }
     pub async fn commence_saga<T: PayloadCommenceSaga + Serialize>(
-        &self,
         payload: T,
     ) -> Result<(), RabbitMQError> {
-        self.send(
+        Self::send(
             Queue::COMMENCE_SAGA,
             &CommenceSaga {
                 title: payload.saga_title(),
@@ -121,6 +121,7 @@ mod commence {
     use lapin::options::BasicConsumeOptions;
     use serde_json::json;
     use std::time::Duration;
+    use crate::connection::RabbitMQClient;
 
     /// The saga commence message is sent to the transactional microservice that listens in "commence_saga"
     #[test]
@@ -141,7 +142,7 @@ mod commence {
             let payload: PurchaseResourceFlowPayload =
                 serde_json::from_value(json_payload).unwrap();
 
-            setup.client.commence_saga(payload).await.unwrap();
+            RabbitMQClient::commence_saga(payload).await.unwrap();
 
             // The transactional microservice receives the message and processes it
             let mut consumer = setup
@@ -189,7 +190,7 @@ mod commence {
                 rewards: rewards.clone(),
             };
 
-            setup.client.commence_saga(payload).await.unwrap();
+            RabbitMQClient::commence_saga(payload).await.unwrap();
 
             // The transactional microservice receives the message and processes it
             let mut consumer = setup

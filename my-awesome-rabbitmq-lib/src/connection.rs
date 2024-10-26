@@ -49,6 +49,8 @@ pub enum RabbitMQError {
     InvalidEventKey(String),
     #[error("Invalid payload: {0}")]
     InvalidPayload(String),
+    #[error("Rabbit uri is not set")]
+    RabbitUri(),
 }
 
 #[derive(Debug, Error)]
@@ -90,12 +92,32 @@ impl Clone for RabbitMQClient {
 // RwLock for the connection because we expect many concurrent reads (status checks) and infrequent writes (reconnections).
 static CONNECTION: OnceCell<RwLock<Connection>> = OnceCell::new();
 
+pub(crate) static RABBIT_URI: OnceCell<String> = OnceCell::new();
+
+pub(crate) static PUBLISH_CHANNEL: OnceCell<Arc<Mutex<Channel>>> = OnceCell::new();
+
+pub(crate) async fn get_or_init_publish_channel() -> Result<Arc<Mutex<Channel>>, RabbitMQError>  {
+    match PUBLISH_CHANNEL.get() {
+        Some(channel) => Ok(Arc::clone(channel)),
+        None => {
+            let rabbit_uri = RABBIT_URI.get().ok_or(RabbitMQError::RabbitUri())?;
+            let connection = RabbitMQClient::get_connection(rabbit_uri.to_string()).await?.read().await;
+            let channel = connection.create_channel().await?;
+            PUBLISH_CHANNEL.set(Arc::new(Mutex::new(channel))).unwrap_or(());
+            Ok(PUBLISH_CHANNEL.get().unwrap().clone()) // safe to unwrap, now the value is set
+        }
+
+    }
+}
+
 impl RabbitMQClient {
     pub async fn new(
         rabbit_uri: &str,
         microservice: AvailableMicroservices,
         events: Option<&'static [MicroserviceEvent]>,
     ) -> Result<Self, RabbitMQError> {
+        RABBIT_URI.set(rabbit_uri.to_string()).unwrap_or(());
+
         let connection = Self::get_connection(rabbit_uri.to_string()).await?.read().await;
 
         let events_channel = connection.create_channel().await?;

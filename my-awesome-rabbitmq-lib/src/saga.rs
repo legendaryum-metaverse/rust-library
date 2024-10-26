@@ -4,11 +4,10 @@ use crate::nack::Nack;
 use crate::queue_consumer_props::Queue;
 use futures_lite::StreamExt;
 use lapin::options::{
-    BasicAckOptions, BasicConsumeOptions, BasicNackOptions, BasicPublishOptions, BasicQosOptions,
-    QueueDeclareOptions,
+    BasicAckOptions, BasicConsumeOptions, BasicNackOptions, BasicQosOptions,
 };
 use lapin::types::FieldTable;
-use lapin::{BasicProperties, Channel};
+use lapin::Channel;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
@@ -253,42 +252,11 @@ impl MicroserviceConsumeChannel {
 
         step.payload = next_payload;
 
-        self.send(Queue::REPLY_TO_SAGA, &step).await?;
+        RabbitMQClient::send(Queue::REPLY_TO_SAGA, &step).await?;
 
         self.channel
             .basic_ack(self.delivery.delivery_tag, BasicAckOptions::default())
             .await
             .map_err(RabbitMQError::from)
-    }
-
-    async fn send<T: Serialize>(&self, queue_name: &str, payload: &T) -> Result<(), RabbitMQError> {
-        let channel = self.channel.clone();
-
-        channel
-            .queue_declare(
-                queue_name,
-                QueueDeclareOptions {
-                    durable: true,
-                    ..QueueDeclareOptions::default()
-                },
-                FieldTable::default(),
-            )
-            .await?;
-
-        let body = serde_json::to_vec(payload)?;
-
-        channel
-            .basic_publish(
-                "",
-                queue_name,
-                BasicPublishOptions::default(),
-                &body,
-                BasicProperties::default()
-                    .with_delivery_mode(2) // persistent
-                    .with_content_type("application/json".into()),
-            )
-            .await?;
-
-        Ok(())
     }
 }

@@ -41,7 +41,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         user_id: "user1233".to_string(),
     };
 
-    r.publish_event(auth_delete_value)
+    RabbitMQClient::publish_event(auth_delete_value)
         .await
         .expect("TODO: panic message");
 
