@@ -49,7 +49,7 @@ pub enum RabbitMQError {
     InvalidEventKey(String),
     #[error("Invalid payload: {0}")]
     InvalidPayload(String),
-    #[error("Rabbit uri is not set")]
+    #[error("Rabbit uri is not set, you need to call RabbitMQClient::new() first")]
     RabbitUri(),
 }
 
@@ -97,13 +97,22 @@ pub(crate) static RABBIT_URI: OnceCell<String> = OnceCell::new();
 pub(crate) static PUBLISH_CHANNEL: OnceCell<Arc<Mutex<Channel>>> = OnceCell::new();
 
 pub(crate) async fn get_or_init_publish_channel() -> Result<Arc<Mutex<Channel>>, RabbitMQError>  {
+    let rabbit_uri = RABBIT_URI.get().ok_or(RabbitMQError::RabbitUri())?;
+    let connection = RabbitMQClient::get_connection(rabbit_uri.to_string()).await?.read().await;
+
     match PUBLISH_CHANNEL.get() {
-        Some(channel) => Ok(Arc::clone(channel)),
+        Some(channel) => {
+            // The global connection can be restarted, that's why we need to check if the channel is still connected
+            let mut chan = channel.lock().await;
+            if !chan.status().connected() {
+                let new_channel = connection.create_channel().await?;
+                *chan = new_channel;
+            }
+            Ok(channel.clone())
+        },
         None => {
-            let rabbit_uri = RABBIT_URI.get().ok_or(RabbitMQError::RabbitUri())?;
-            let connection = RabbitMQClient::get_connection(rabbit_uri.to_string()).await?.read().await;
             let channel = connection.create_channel().await?;
-            PUBLISH_CHANNEL.set(Arc::new(Mutex::new(channel))).unwrap_or(());
+            PUBLISH_CHANNEL.set(Arc::new(Mutex::new(channel))).unwrap_or(()); // only the first one sets
             Ok(PUBLISH_CHANNEL.get().unwrap().clone()) // safe to unwrap, now the value is set
         }
 
@@ -208,7 +217,7 @@ impl RabbitMQClient {
     /// - Lazily initializes a new connection if none exists
     /// - Automatically refreshes the connection if it's disconnected
     /// - Thread-safe using RwLock for concurrent access
-    pub async fn get_connection(rabbit_uri: String) -> Result<&'static RwLock<Connection>, RabbitMQError> {
+    pub(crate) async fn get_connection(rabbit_uri: String) -> Result<&'static RwLock<Connection>, RabbitMQError> {
         match CONNECTION.get() { // never blocks, can be concurrent
             None => {
                 let connection = Self::create_connection(rabbit_uri.as_str()).await?;
