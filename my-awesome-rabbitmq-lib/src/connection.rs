@@ -8,6 +8,7 @@ use tokio::sync::{Mutex, RwLock};
 use tracing::{debug, error, info, warn};
 use crate::events::MicroserviceEvent;
 use backoff::{Error as BackoffError, ExponentialBackoff};
+use once_cell::sync::OnceCell;
 
 #[derive(Debug, Clone, PartialEq, Eq, EnumString, AsRefStr, EnumIter, Serialize, Deserialize)]
 #[strum(serialize_all = "kebab-case")]
@@ -58,9 +59,13 @@ pub enum HealthCheckError {
     Timeout(u128),
 }
 
+impl From<RabbitMQError> for HealthCheckError {
+    fn from(err: RabbitMQError) -> Self {
+        HealthCheckError::Unhealthy(err.to_string())
+    }
+}
+
 pub struct RabbitMQClient {
-    // RwLock for the connection because we expect many concurrent reads (status checks) and infrequent writes (reconnections).
-    pub(crate) connection: Arc<RwLock<Connection>>,
     pub(crate) events_channel: Arc<Mutex<Channel>>,
     pub(crate) saga_channel: Arc<Mutex<Channel>>,
     pub(crate) events: &'static [MicroserviceEvent],
@@ -74,7 +79,6 @@ impl Clone for RabbitMQClient {
         Self {
             events: self.events,
             microservice: self.microservice.clone(),
-            connection: Arc::clone(&self.connection),
             events_channel: Arc::clone(&self.events_channel),
             saga_channel: Arc::clone(&self.saga_channel),
             rabbit_uri: self.rabbit_uri.clone(),
@@ -83,27 +87,30 @@ impl Clone for RabbitMQClient {
     }
 }
 
+// RwLock for the connection because we expect many concurrent reads (status checks) and infrequent writes (reconnections).
+static CONNECTION: OnceCell<RwLock<Connection>> = OnceCell::new();
+
 impl RabbitMQClient {
     pub async fn new(
         rabbit_uri: &str,
         microservice: AvailableMicroservices,
         events: Option<&'static [MicroserviceEvent]>,
     ) -> Result<Self, RabbitMQError> {
-        let connection = Self::create_connection(rabbit_uri).await?;
+        let connection = Self::get_connection(rabbit_uri.to_string()).await?.read().await;
+
         let events_channel = connection.create_channel().await?;
         events_channel
-            .basic_qos(1, lapin::options::BasicQosOptions::default())
+            .basic_qos(1, Default::default())
             .await?;
 
         let saga_channel = connection.create_channel().await?;
         saga_channel
-            .basic_qos(1, lapin::options::BasicQosOptions::default())
+            .basic_qos(1, Default::default())
             .await?;
 
         Ok(Self {
             microservice,
             events: events.unwrap_or(&[]),
-            connection: Arc::new(RwLock::new(connection)),
             events_channel: Arc::new(Mutex::new(events_channel)),
             saga_channel: Arc::new(Mutex::new(saga_channel)),
             rabbit_uri: rabbit_uri.to_string(),
@@ -169,8 +176,47 @@ impl RabbitMQClient {
             .map_err(|_| HealthCheckError::Timeout(timeout.as_millis()))?
     }
 
+    /// Provides a thread-safe connection to RabbitMQ, creating or refreshing the connection as needed.
+    ///
+    /// # Returns
+    /// - `Ok(&RwLock<Connection>)` - A reference to the thread-safe connection handle
+    /// - `Err(RabbitMQError)` - If connection creation or refresh fails
+    ///
+    /// # Details
+    /// - Lazily initializes a new connection if none exists
+    /// - Automatically refreshes the connection if it's disconnected
+    /// - Thread-safe using RwLock for concurrent access
+    pub async fn get_connection(rabbit_uri: String) -> Result<&'static RwLock<Connection>, RabbitMQError> {
+        match CONNECTION.get() { // never blocks, can be concurrent
+            None => {
+                let connection = Self::create_connection(rabbit_uri.as_str()).await?;
+                CONNECTION
+                    .set(RwLock::new(connection))
+                    .unwrap_or(());
+                // Consume the result and avoid panic with the default ()
+                // Due to the atomic set the first thread to set the empty cell wins, while other threads trying to set a (now)
+                // non-empty cell will return an error. These errors are ignored with the default ().
+                // Since the connection is already in the cell, the next step will always be Some.
+                Ok(CONNECTION.get().unwrap())
+            }
+            Some(connection) => {
+                // Check and refresh existing connection if needed
+                let read_conn = connection.read().await;
+                if !read_conn.status().connected() {
+                    drop(read_conn); // Release the read lock before writing
+                    let mut write_conn = connection.write().await;
+                    *write_conn = Self::create_connection(rabbit_uri.as_str()).await?;
+                }
+                Ok(connection)
+            }
+        }
+    }
+    pub async fn current_connection(&self) -> Result<&'static RwLock<Connection>, RabbitMQError> {
+        Self::get_connection(self.rabbit_uri.to_string()).await
+    }
+
     async fn check_connection_health(&self) -> Result<(), HealthCheckError> {
-        let conn = self.connection.read().await;
+        let conn = self.current_connection().await?.read().await;
         if !conn.status().connected() {
             return Err(HealthCheckError::Unhealthy("Connection".to_string()));
         }
@@ -212,14 +258,9 @@ impl RabbitMQClient {
     pub async fn reconnect(&self) -> Result<(), RabbitMQError> {
         warn!("Attempting to reconnect to RabbitMQ");
 
-        let new_connection = Self::create_connection(&self.rabbit_uri).await?;
+        let new_connection = self.current_connection().await?.read().await;
         let events_channel = new_connection.create_channel().await?;
         let saga_channel = new_connection.create_channel().await?;
-
-        // Update the connection
-        let mut conn_write = self.connection.write().await;
-        *conn_write = new_connection;
-        drop(conn_write); // Explicitly drop the write lock
 
         // Update the channel
         let mut channel = self.events_channel.lock().await;
@@ -245,9 +286,12 @@ impl RabbitMQClient {
             warn!("Error closing saga_channel: {:?}", e);
         }
 
-        let conn = self.connection.read().await;
-        if let Err(e) = conn.close(0, "Cleanup").await {
-            warn!("Error closing connection: {:?}", e);
+        if let Ok(conn) = self.current_connection().await {
+            if let Err(e) = conn.read().await.close(0, "Cleanup").await {
+                warn!("Error closing connection: {:?}", e);
+            }
+        } else {
+            unreachable!("No connection found to close");
         }
         debug!("RabbitMQ client resources cleaned up");
     }
@@ -355,10 +399,10 @@ mod tests {
             });
         }
         #[test]
-        fn test_health_check_connection_close() {
+        fn test_health_check_connection_close_and_reconnect() {
             let setup = TestSetup::new(None);
             setup.rt.block_on(async {
-                let conn_lock = setup.client.connection.write().await;
+                let conn_lock = setup.client.current_connection().await.expect("No connection found").read().await; // blocking
                 conn_lock
                     .close(0, "Test disconnect")
                     .await
@@ -366,12 +410,12 @@ mod tests {
                 drop(conn_lock); // otherwise is test_health_check_timeout test
 
                 let result = setup.client.check_connection_health().await;
-                assert!(result.is_err());
-                assert_eq!(result.unwrap_err().to_string(), "Unhealthy Connection");
+                // The reconnection occurs in `self.current_connection()`
+                assert!(result.is_ok());
 
                 let result = setup.client.health_check(Duration::from_millis(200)).await;
                 assert!(result.is_err());
-                assert_eq!(result.unwrap_err().to_string(), "Unhealthy Connection");
+                assert_eq!(result.unwrap_err().to_string(), "Unhealthy Events Channel"); // first channel to get checked
             });
         }
     }
@@ -389,7 +433,7 @@ mod tests {
 
             // Step 2: Simulate a connection drop by manually closing the connection
             {
-                let conn = setup.client.connection.write().await;
+                let conn = setup.client.current_connection().await.expect("No connection found").write().await;
                 conn.close(0, "Test disconnect")
                     .await
                     .expect("Failed to close connection");
@@ -584,9 +628,10 @@ mod tests {
                 .await
                 .expect("Failed to create consumer");
 
-            // Step 3: Simulate a connection drop while consuming
+            // Step 3: Simulate a connection drop while consuming, topology is erased
             {
-                let conn = setup.client.connection.write().await;
+                let conn = setup.client.current_connection().await.expect("No connection found").write().await;
+                warn!("TOPOLOGY BEFORE CLOSING ARE GOING TO BE DELETED {:?}",conn.topology());
                 conn.close(0, "Test disconnect")
                     .await
                     .expect("Failed to close connection");
@@ -598,6 +643,9 @@ mod tests {
                 .reconnect()
                 .await
                 .expect("Reconnection should succeed");
+
+            let conn = setup.client.current_connection().await.expect("No connection found").write().await;
+            info!("TOPOLOGY AFTER CLOSING SHOULD BE EMPTY {:?}",conn.topology());
 
             // Step 5: Ensure the remaining message can still be consumed
             let received_message = tokio::time::timeout(Duration::from_secs(5), consumer.next())

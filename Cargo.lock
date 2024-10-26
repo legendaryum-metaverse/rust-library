@@ -998,6 +998,7 @@ dependencies = [
  "futures",
  "futures-lite 2.3.0",
  "lapin",
+ "once_cell",
  "rand",
  "serde",
  "serde_json",

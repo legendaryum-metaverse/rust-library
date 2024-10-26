@@ -34,6 +34,7 @@ pub(crate) mod setup {
         QueueDeleteOptions,
     };
 
+    use crate::connection::{AvailableMicroservices, RabbitMQClient, RabbitMQError};
     use lapin::types::FieldTable;
     use lapin::BasicProperties;
     use rand::distributions::{Distribution, Standard};
@@ -41,8 +42,6 @@ pub(crate) mod setup {
     use serde::de::DeserializeOwned;
     use serde::Serialize;
     use std::env;
-
-    use crate::connection::{AvailableMicroservices, RabbitMQClient, RabbitMQError};
     use tokio::runtime::Runtime;
     use tracing::{debug, error, info, Level};
 
@@ -177,10 +176,17 @@ pub(crate) mod setup {
     impl Drop for TestSetup {
         fn drop(&mut self) {
             self.rt.block_on(async {
-                let conn = self.client.connection.read().await;
+                let conn = self
+                    .client
+                    .current_connection()
+                    .await
+                    .expect("Cannot get the connection")
+                    .read()
+                    .await;
                 if !conn.status().connected() {
-                    // must be the health check tests
-                    return;
+                    unreachable!(
+                        "Connection is always guaranteed in `RabbitMQClient::get_connection`"
+                    );
                 }
                 let delete_channel = conn.create_channel().await.unwrap();
                 let t = conn.topology();

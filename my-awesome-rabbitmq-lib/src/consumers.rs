@@ -330,7 +330,7 @@ mod test_consumers {
                 "Failed to create consumers: {:?}",
                 result.err()
             );
-            let conn = setup.client.connection.read().await;
+            let conn = setup.client.current_connection().await.expect("Cannot get the connection").read().await;
             let t = conn.topology();
 
             // verifying exchanges
@@ -385,7 +385,7 @@ mod test_consumers {
                     "test.image_my_cool_micro",
                 ];
 
-                let conn = setup.client.connection.read().await;
+                let conn = setup.client.current_connection().await.expect("Cannot get the connection").read().await;
                 let t = conn.topology();
 
                 // verifying exchanges
@@ -425,7 +425,7 @@ mod test_consumers {
                     result.err()
                 );
 
-                let conn = setup.client.connection.read().await;
+                let conn = setup.client.current_connection().await.expect("Cannot get the connection").read().await;
                 let t = conn.topology();
 
                 let known_queues = vec!["my_cool_micro", "my_cool_micro_matching_requeue"];
