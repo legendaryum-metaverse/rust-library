@@ -1,0 +1,110 @@
+name: reusable-code_quality_check
+on:
+  workflow_call:
+    outputs:
+      image-size:
+        description: 'The image size'
+        value: ${{ jobs.smoke-test.outputs.image-size || 0 }}
+
+env:
+  CARGO_INCREMENTAL: 0
+  FORCE_COLOR: 3
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  lint:
+    timeout-minutes: 3
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with: # Se necesita pararse en el PR y no en el commit para un posible push
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.ref }}
+
+      - name: Prettier Build (background)
+        run: |
+          nohup make prettier-build > /dev/null 2>&1 &
+
+      - name: Setup Rust toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          components: clippy, rustfmt
+
+      - name: Format
+        run: make format
+
+      - name: Lint fix
+        run: make lint-fix
+
+      - name: Prettier additional files
+        run: |
+          make prettier
+
+      - name: Check if files changed
+        id: check-if-files-changed
+        continue-on-error: true
+        run: |
+          git diff --quiet
+      - name: Commit the changes
+        if: ${{ steps.check-if-files-changed.outcome == 'failure' }}
+        uses: EndBug/add-and-commit@v9
+        with:
+          author_name: github-actions[bot]
+          author_email: github-actions[bot]@users.noreply.github.com
+          default_author: github_actor
+          message: 'Commit from GitHub Actions (lint_fix)'
+          # Arguments for the git fetch command. If set to false, the action won't fetch the repo.
+          # For more info as to why fetching is usually recommended, please see the "Performance on large repos" FAQ.
+          # Default: --tags --force
+          fetch: false
+          # TODO: if it fails maybe a report would be nice
+          # The way the action should handle pathspec errors from the add and remove commands. Three options are available:
+          # - ignore -> errors will be logged but the step won't fail
+          # - exitImmediately -> the action will stop right away, and the step will fail
+          # - exitAtEnd -> the action will go on, every pathspec error will be logged at the end, the step will fail.
+          # Default: ignore
+          pathspec_error_handling: ignore
+          push: true
+
+  check:
+    name: Compile-time error checking
+    timeout-minutes: 3
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Rust toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+
+      - name: Check
+        run: cargo check --all
+
+  unit-test:
+    needs: [check]
+    timeout-minutes: 4
+    runs-on: ubuntu-latest
+    environment: testing
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Up test containers (background)
+        run: |
+          nohup docker compose up -d > /dev/null 2>&1 &
+
+      - name: Setup Rust toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+
+      - name: Compile tests
+        run: make test-compile
+
+      - name: Run tests
+        id: run-tests
+        env:
+          FUNCS_COVERAGE_THRESHOLD: 53.0
+        run: |
+          make test

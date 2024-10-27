@@ -29,3 +29,7 @@ prettier-build:
 test:
 	@bash scripts/test.sh
 .PHONY: test
+
+test-compile:
+	@cargo test -p my-awesome-rabbitmq-lib --no-run --locked
+.PHONY: test-compile
