@@ -1,16 +1,6 @@
 use my_awesome_rabbitmq_lib::connection::{AvailableMicroservices, RabbitMQClient};
 use my_awesome_rabbitmq_lib::events::{AuthDeletedUserPayload, MicroserviceEvent};
-use serde::Deserialize;
 use std::error::Error;
-
-#[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct MintPayload {
-    image_id: String,
-}
-
-
-
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     pub const RABBIT_URI: &str = "amqp://rabbit:1234@localhost:5672";
