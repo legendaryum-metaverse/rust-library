@@ -28,3 +28,8 @@ Pendientes:
 ## Features
 
 It has `std` y `events`features flags, `std` is the main app, `events = ["serde", "strum", "strum_macros"]` is used to handle types, payloads, enum, struct of the app
+
+### Test
+
+Due to global vars like the connection and the publish-channel, the test can have different behaviors when
+are tested alone or with other tests. The global vars cannot be unset/reset, implies a `mut static` var, which is not allowed in Rust.

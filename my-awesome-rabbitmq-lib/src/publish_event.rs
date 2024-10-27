@@ -92,6 +92,7 @@ mod test_publish_event {
                     let p: AuthDeletedUserPayload =
                         handler.parse_payload().expect("Error parsing payload");
                     assert_eq!(p.user_id, "user1233");
+                    handler.ack().await.expect("Error acking message");
                     barrier.wait().await;
                 }
             })
@@ -123,25 +124,31 @@ mod test_publish_event {
                 .expect("TODO: panic message");
 
             // The consumption must be last not first, due to reconnection, the "consumer.next().await" will be blocked
-            //
             let atomic_counter = Arc::new(AtomicUsize::new(0));
-            let barrier = Arc::new(Barrier::new(2));
-            let b_clone = barrier.clone();
+
+            let first_barrier = Arc::new(Barrier::new(2));
+            let first_barrier_clone = first_barrier.clone();
+
+            let last_barrier = Arc::new(Barrier::new(2));
+            let last_barrier_clone = last_barrier.clone();
 
             e.on_with_async_handler(AuthDeletedUser, move |handler| {
-                let barrier = barrier.clone();
+                let first_barrier = first_barrier.clone();
+                let last_barrier = last_barrier.clone();
                 let a_counter = atomic_counter.clone();
                 async move {
-                    // println!("{:?} {:?}", AuthDeletedUser, handler.get_payload());
+                    println!("{:?} {:?}", AuthDeletedUser, handler.get_payload());
                     let p: AuthDeletedUserPayload =
                         handler.parse_payload().expect("Error parsing payload");
                     assert_eq!(p.user_id, "user1233");
                     let atomic_value = a_counter.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
-
-                    if atomic_value == 1 {
-                        barrier.wait().await;
-                    }
                     handler.ack().await.expect("Error acking message");
+                    if atomic_value == 0 {
+                        first_barrier.wait().await;
+                    }
+                    if atomic_value == 1 {
+                        last_barrier.wait().await;
+                    }
                 }
             })
                 .await;
@@ -151,6 +158,10 @@ mod test_publish_event {
             RabbitMQClient::publish_event(auth_deleted_user_payload.clone())
                 .await
                 .expect("Error publishing AuthDeletedUserPayload event");
+
+            first_barrier_clone.wait().await;
+
+            // tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
 
             // Simulate a connection drop while consuming and later publishing an event
             {
@@ -173,7 +184,7 @@ mod test_publish_event {
                 .expect("Error publishing AuthDeletedUserPayload event");
 
 
-            b_clone.wait().await;
+            last_barrier_clone.wait().await;
         });
     }
 }
