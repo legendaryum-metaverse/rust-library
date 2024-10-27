@@ -76,7 +76,7 @@ impl PayloadEvent for TestMintPayload {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct AuthDeletedUserPayload {
     pub user_id: String,

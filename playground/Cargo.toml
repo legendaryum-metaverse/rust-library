@@ -35,3 +35,7 @@ path = "validator.rs"
 [[bin]]
 name = "tran"
 path = "transaccional.rs"
+
+[[bin]]
+name = "pub"
+path = "publish.rs"

@@ -9,6 +9,7 @@ use tracing::{debug, error, info, warn};
 use crate::events::MicroserviceEvent;
 use backoff::{Error as BackoffError, ExponentialBackoff};
 use once_cell::sync::OnceCell;
+use crate::start::{EventEmitter, SagaEmitter};
 
 #[derive(Debug, Clone, PartialEq, Eq, EnumString, AsRefStr, EnumIter, Serialize, Deserialize)]
 #[strum(serialize_all = "kebab-case")]
@@ -73,6 +74,10 @@ pub struct RabbitMQClient {
     pub(crate) events: &'static [MicroserviceEvent],
     pub(crate) microservice: AvailableMicroservices,
     rabbit_uri: String,
+    pub(crate) events_queue_name: String,
+    pub(crate) saga_queue_name: String,
+    pub(crate) event_emitter:  Arc<Mutex<Option<EventEmitter>>>,
+    pub(crate) saga_emitter: Arc<Mutex<Option<SagaEmitter>>>,
     reconnecting: Arc<Mutex<bool>>,
 }
 
@@ -80,6 +85,10 @@ impl Clone for RabbitMQClient {
     fn clone(&self) -> Self {
         Self {
             events: self.events,
+            events_queue_name: self.events_queue_name.clone(),
+            saga_queue_name: self.saga_queue_name.clone(),
+            event_emitter: self.event_emitter.clone(),
+            saga_emitter: self.saga_emitter.clone(),
             microservice: self.microservice.clone(),
             events_channel: Arc::clone(&self.events_channel),
             saga_channel: Arc::clone(&self.saga_channel),
@@ -139,8 +148,16 @@ impl RabbitMQClient {
             .basic_qos(1, Default::default())
             .await?;
 
+        let events_queue_name = format!("{}_match_commands", microservice.as_ref());
+        let saga_queue_name = format!("{}_saga_commands", microservice.as_ref());
+
         Ok(Self {
             microservice,
+            saga_queue_name,
+            events_queue_name,
+            // the emitters are set later
+            event_emitter:  Arc::new(Mutex::new(None)),
+            saga_emitter:  Arc::new(Mutex::new(None)),
             events: events.unwrap_or(&[]),
             events_channel: Arc::new(Mutex::new(events_channel)),
             saga_channel: Arc::new(Mutex::new(saga_channel)),
@@ -300,9 +317,23 @@ impl RabbitMQClient {
         let mut channel = self.saga_channel.lock().await;
         *channel = saga_channel;
 
-        info!("Successfully reconnected to RabbitMQ");
+        // Channels updated, now reconnect the emitters if they exist
+        let should_reconnect_event_emitter = self.event_emitter.lock().await.is_some();
+        if should_reconnect_event_emitter {
+            let _ = self.start_consuming_events().await;
+            info!("Successfully reconnected to event_emitter");
+        }
+        let should_reconnect_saga_emitter = self.saga_emitter.lock().await.is_some();
+        if should_reconnect_saga_emitter {
+            let _ = self.start_consuming_saga_commands().await;
+            info!("Successfully reconnected to saga_emitter");
+        }
+
+
+
         let mut reconnecting = self.reconnecting.lock().await;
         *reconnecting = false;
+        info!("Successfully reconnected to RabbitMQ");
         Ok(())
     }
 
@@ -666,7 +697,7 @@ mod tests {
                 conn.close(0, "Test disconnect")
                     .await
                     .expect("Failed to close connection");
-            }
+            } // out of scope, conn is dropped
 
             // Step 4: Trigger reconnection
             setup
