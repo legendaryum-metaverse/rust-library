@@ -5,6 +5,6 @@ WORKDIR /app
 FROM base AS runner
 
 RUN bun init -y
-RUN bun add prettier prettier-plugin-sh prettier-plugin-sql
+RUN bun add -g prettier prettier-plugin-sh prettier-plugin-sql
 
 CMD ["bunx", "prettier", "--", "\"**/*.{md,yml,yaml,json,mdx,sh,sql}\"", "--write"]

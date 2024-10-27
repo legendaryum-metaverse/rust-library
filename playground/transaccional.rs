@@ -33,7 +33,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let r = RabbitMQClient::new(
         RABBIT_URI,
         AvailableMicroservices::TestMint,
-        Some(&[MicroserviceEvent::TestMint]),
+        Some(&[
+            MicroserviceEvent::TestMint,
+            MicroserviceEvent::AuthDeletedUser,
+        ]),
     )
     .await?;
 
@@ -41,7 +44,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         user_id: "user1233".to_string(),
     };
 
-    r.publish_event(auth_delete_value)
+    RabbitMQClient::publish_event(auth_delete_value)
         .await
         .expect("TODO: panic message");
 
@@ -88,5 +91,26 @@ async fn main() -> Result<(), Box<dyn Error>> {
     })
     .await;
 
+    println!("Connected to RabbitMQ");
+    // block forever
+
+    // Simulate a connection drop while consuming and later publishing an event
+    {
+        println!("Closing!");
+        let conn = r
+            .current_connection()
+            .await
+            .expect("No connection found")
+            .write()
+            .await;
+        conn.close(0, "Test disconnect")
+            .await
+            .expect("Failed to close connection");
+    } // conn dropped here
+
+    // Trigger reconnection
+    println!("Reconnection!");
+    r.reconnect().await.expect("Reconnection should succeed");
+    tokio::signal::ctrl_c().await?;
     Ok(())
 }

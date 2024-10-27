@@ -163,7 +163,7 @@ mod test_nack {
     use std::time::Duration;
     use tokio::sync::Barrier;
     use tokio::time::timeout;
-    use crate::connection::AvailableMicroservices;
+    use crate::connection::{AvailableMicroservices, RabbitMQClient};
 
     /// Integration test, slow because of nack with fibo, min -> 1 sec
     #[test]
@@ -236,16 +236,12 @@ mod test_nack {
             .await;
 
             // Publish event
-            setup
-                .client
-                .publish_event(AuthLogoutUserPayload {
+            RabbitMQClient::publish_event(AuthLogoutUserPayload {
                     user_id: "123".to_string(),
                 })
                 .await
                 .expect("Failed to publish event");
-            setup
-                .client
-                .publish_event(CoinsSendEmailPayload {
+            RabbitMQClient::publish_event(CoinsSendEmailPayload {
                     user_id: "123".to_string(),
                     email_type: "email".to_string(),
                     email: "my_email@email.com".to_string(),
