@@ -52,7 +52,7 @@ pub trait PayloadEvent {
     fn event_type(&self) -> MicroserviceEvent;
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct TestImagePayload {
     pub image: String,
@@ -64,7 +64,7 @@ impl PayloadEvent for TestImagePayload {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct TestMintPayload {
     pub mint: String,
@@ -88,7 +88,7 @@ impl PayloadEvent for AuthDeletedUserPayload {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct AuthLogoutUserPayload {
     pub user_id: String,
@@ -100,7 +100,7 @@ impl PayloadEvent for AuthLogoutUserPayload {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct AuthNewUserPayload {
     pub id: String,
@@ -115,7 +115,7 @@ impl PayloadEvent for AuthNewUserPayload {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct CoinsUpdateSubscriptionPayload {
     pub user_id: String,
@@ -128,7 +128,7 @@ impl PayloadEvent for CoinsUpdateSubscriptionPayload {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct CoinsNotifyClientPayload {
     pub room: String,
@@ -141,7 +141,7 @@ impl PayloadEvent for CoinsNotifyClientPayload {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct CoinsSendEmailPayload {
     pub user_id: String,
@@ -156,7 +156,7 @@ impl PayloadEvent for CoinsSendEmailPayload {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct LegendMissionsCompletedMissionRewardEventPayload {
     pub user_id: String,
@@ -169,7 +169,7 @@ impl PayloadEvent for LegendMissionsCompletedMissionRewardEventPayload {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct LegendMissionsOngoingMissionEventPayload {
     pub redis_key: String,
@@ -181,21 +181,21 @@ impl PayloadEvent for LegendMissionsOngoingMissionEventPayload {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 #[serde(rename_all = "PascalCase")]
 pub enum RankingsRewardsType {
     Legends,
     CodeExchange,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct RankingWinners {
     pub user_id: String,
     pub reward: i32,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct CompletedRanking {
     pub title: String,
@@ -207,7 +207,7 @@ pub struct CompletedRanking {
     pub winners: Vec<RankingWinners>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct LegendRankingsRankingsFinishedEventPayload {
     pub completed_rankings: Vec<CompletedRanking>,
@@ -219,7 +219,7 @@ impl PayloadEvent for LegendRankingsRankingsFinishedEventPayload {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Room {
     #[serde(rename = "Id")]
@@ -239,7 +239,7 @@ pub struct Room {
     pub have_editor: bool,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct RoomCreatorCreatedRoomPayload {
     #[serde(rename = "room")]
     pub room: Room,
@@ -251,7 +251,7 @@ impl PayloadEvent for RoomCreatorCreatedRoomPayload {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct RoomCreatorUpdatedRoomPayload {
     #[serde(rename = "room")]
     pub room: Room,
@@ -263,7 +263,7 @@ impl PayloadEvent for RoomCreatorUpdatedRoomPayload {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct RoomInventoryUpdateVpBuildingImagePayload {
     pub images: Vec<String>,
@@ -277,7 +277,7 @@ impl PayloadEvent for RoomInventoryUpdateVpBuildingImagePayload {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct RoomSnapshotBuildingChangeInIslandPayload {
     pub building: String,
@@ -290,7 +290,7 @@ impl PayloadEvent for RoomSnapshotBuildingChangeInIslandPayload {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct RoomSnapshotFirstSnapshotPayload {
     pub slug: String,
@@ -302,7 +302,7 @@ impl PayloadEvent for RoomSnapshotFirstSnapshotPayload {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct SocialBlockChatPayload {
     pub user_id: String,
@@ -315,7 +315,7 @@ impl PayloadEvent for SocialBlockChatPayload {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct SocialMediaRoomsDeleteInBatchPayload {
     pub bucket_name: String,
@@ -328,7 +328,7 @@ impl PayloadEvent for SocialMediaRoomsDeleteInBatchPayload {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct SocialNewUserPayload {
     pub user_id: String,
@@ -340,7 +340,7 @@ impl PayloadEvent for SocialNewUserPayload {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct SocialUnblockChatPayload {
     pub user_id: String,
