@@ -991,7 +991,7 @@ dependencies = [
 
 [[package]]
 name = "my-awesome-rabbitmq-lib"
-version = "0.2.3"
+version = "0.2.4"
 dependencies = [
  "backoff",
  "ctor",
