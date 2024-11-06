@@ -18,6 +18,7 @@ pub enum AvailableMicroservices {
     TestImage,
     TestMint,
     Auth,
+    Blockchain,
     Coins,
     Missions,
     Rankings,
