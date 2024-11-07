@@ -1,3 +1,4 @@
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use strum_macros::{AsRefStr, EnumIter, EnumString};
@@ -328,10 +329,72 @@ impl PayloadEvent for SocialMediaRoomsDeleteInBatchPayload {
     }
 }
 
+/// Gender represents the possible genders a social user can have.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "UPPERCASE")]
+pub enum Gender {
+    Male,
+    Female,
+    Undefined,
+}
+
+/// Represents the geographical location of a user
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct UserLocation {
+    pub continent: String,
+    pub country: String,
+    pub region: String,
+    pub city: String,
+}
+
+/// SocialUser represents the social user model.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SocialUser {
+    #[serde(rename = "_id")]
+    pub id: String,
+    pub username: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub first_name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub last_name: Option<String>,
+    pub gender: Gender,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub is_public_profile: Option<bool>,
+    pub followers: Vec<String>,
+    pub following: Vec<String>,
+    pub email: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub birthday: Option<DateTime<Utc>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub location: Option<UserLocation>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub avatar: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub avatar_screenshot: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub user_image: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub glb_url: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub social_media: Option<HashMap<String, String>>,
+    pub preferences: Vec<String>,
+    pub blocked_users: Vec<String>,
+    #[serde(rename = "RPMAvatarId", skip_serializing_if = "Option::is_none")]
+    pub rpm_avatar_id: Option<String>,
+    #[serde(rename = "RPMUserId", skip_serializing_if = "Option::is_none")]
+    pub rpm_user_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub paid_price_id: Option<String>,
+    pub created_at: DateTime<Utc>,
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct SocialNewUserPayload {
-    pub user_id: String,
+    pub social_user: SocialUser,
 }
 
 impl PayloadEvent for SocialNewUserPayload {
