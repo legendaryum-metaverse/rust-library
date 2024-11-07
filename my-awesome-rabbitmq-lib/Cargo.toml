@@ -12,7 +12,7 @@ categories = ["asynchronous", "network-programming"]
 
 [features]
 default = ["events", "std"]
-events = ["serde", "strum", "strum_macros"]
+events = ["serde", "strum", "strum_macros", "chrono"]
 std = ["lapin", "tokio", "futures-lite", "thiserror", "serde_json", "tracing", "backoff", "once_cell"]
 
 [dependencies]
@@ -27,7 +27,7 @@ backoff = { version = "0.4.0", features = ["tokio"], optional = true  }
 strum = { version = "0.26.3", default-features = true, optional = true }
 strum_macros = { version = "0.26.4", optional = true }
 once_cell = { version = "1.20.2", optional = true }
-chrono = { version = "0.4.38", features = ["serde"], optional = false }
+chrono = { version = "0.4.38", default-features = false, features = ["serde"], optional = true }
 
 [dev-dependencies]
 ctor = "0.2.8"
