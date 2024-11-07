@@ -1,3 +1,4 @@
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use strum_macros::{AsRefStr, EnumIter, EnumString};
@@ -328,10 +329,60 @@ impl PayloadEvent for SocialMediaRoomsDeleteInBatchPayload {
     }
 }
 
+// Gender represents the possible genders a social user can have.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum Gender {
+    Male,
+    Female,
+    Undefined,
+}
+
+// UserLocation represents the user's location.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct UserLocation {
+    pub continent: String,
+    pub country: String,
+    pub region: String,
+    pub city: String,
+}
+
+// SocialUser represents the social user model.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SocialUser {
+    #[serde(rename = "_id")]
+    pub id: String,
+    pub username: String,
+    pub first_name: Option<String>,
+    pub last_name: Option<String>,
+    pub gender: Gender,
+    pub is_public_profile: bool,
+    pub followers: Vec<String>,
+    pub following: Vec<String>,
+    pub email: String,
+    pub birthday: Option<DateTime<Utc>>,
+    pub location: Option<UserLocation>,
+    pub avatar: Option<String>,
+    pub avatar_screenshot: Option<String>,
+    pub user_image: Option<String>,
+    pub glb_url: Option<String>,
+    pub description: String,
+    pub social_media: Option<HashMap<String, String>>,
+    pub preferences: Vec<String>,
+    pub blocked_users: Vec<String>,
+    #[serde(rename = "RPMAvatarId")]
+    pub rpm_avatar_id: Option<String>,
+    #[serde(rename = "RPMUserId")]
+    pub rpm_user_id: Option<String>,
+    pub paid_price_id: Option<String>,
+    pub created_at: DateTime<Utc>,
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct SocialNewUserPayload {
-    pub user_id: String,
+    pub social_user: SocialUser,
 }
 
 impl PayloadEvent for SocialNewUserPayload {
