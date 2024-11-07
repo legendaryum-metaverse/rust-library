@@ -1,11 +1,10 @@
+use crate::connection::{AvailableMicroservices, RabbitMQClient, RabbitMQError};
 use crate::emitter::Emitter;
 use crate::my_delivery::MyDelivery;
 use crate::nack::Nack;
 use crate::queue_consumer_props::Queue;
 use futures_lite::StreamExt;
-use lapin::options::{
-    BasicAckOptions, BasicConsumeOptions, BasicNackOptions, BasicQosOptions,
-};
+use lapin::options::{BasicAckOptions, BasicConsumeOptions, BasicNackOptions, BasicQosOptions};
 use lapin::types::FieldTable;
 use lapin::Channel;
 use serde::{Deserialize, Serialize};
@@ -14,7 +13,6 @@ use std::collections::HashMap;
 use std::time::Duration;
 use strum_macros::{AsRefStr, Display, EnumIter, EnumString};
 use tracing::error;
-use crate::connection::{AvailableMicroservices, RabbitMQClient, RabbitMQError};
 
 #[derive(
     Debug, Clone, PartialEq, Eq, EnumString, AsRefStr, EnumIter, Serialize, Deserialize, Hash,
@@ -39,6 +37,11 @@ pub enum StepCommand {
     #[strum(serialize = "rankings_users_reward:reward_coins")]
     #[serde(rename = "rankings_users_reward:reward_coins")]
     RankingsRewardCoins,
+
+    // RapidMessaging commands
+    #[strum(serialize = "replicate_minimized_social_user")]
+    #[serde(rename = "replicate_minimized_social_user")]
+    ReplicateMinimizedSocialUser,
 
     // RoomInventory commands
     #[strum(serialize = "resource_purchased:save_purchased_resource")]
