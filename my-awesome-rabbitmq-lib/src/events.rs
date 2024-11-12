@@ -45,6 +45,8 @@ pub enum MicroserviceEvent {
     SocialNewUser,
     #[strum(serialize = "social.unblock_chat")]
     SocialUnblockChat,
+    #[strum(serialize = "social.update_user")]
+    SocialUpdateUser,
     #[strum(serialize = "social_media_rooms.delete_in_batch")]
     SocialMediaRoomsDeleteInBatch,
 }
@@ -400,6 +402,18 @@ pub struct SocialNewUserPayload {
 impl PayloadEvent for SocialNewUserPayload {
     fn event_type(&self) -> MicroserviceEvent {
         MicroserviceEvent::SocialNewUser
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct SocialUpdateUserPayload {
+    pub social_user: SocialUser,
+}
+
+impl PayloadEvent for SocialUpdateUserPayload {
+    fn event_type(&self) -> MicroserviceEvent {
+        MicroserviceEvent::SocialUpdateUser
     }
 }
 
