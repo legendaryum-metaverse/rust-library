@@ -184,13 +184,6 @@ impl PayloadEvent for LegendMissionsOngoingMissionEventPayload {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
-#[serde(rename_all = "PascalCase")]
-pub enum RankingsRewardsType {
-    Legends,
-    CodeExchange,
-}
-
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct RankingWinners {
@@ -206,7 +199,7 @@ pub struct CompletedRanking {
     pub author_email: String,
     pub ends_at: String,
     pub reward: String,
-    pub reward_type: RankingsRewardsType,
+    pub reward_type: String,
     pub winners: Vec<RankingWinners>,
 }
 
