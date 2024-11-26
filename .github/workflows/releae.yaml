@@ -1,0 +1,23 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Release
+        uses: docker://antonyurchenko/git-release:latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DRAFT_RELEASE: false
+          PRE_RELEASE: false
+          CHANGELOG_FILE: CHANGELOG.md
+          ALLOW_EMPTY_CHANGELOG: true
+          RELEASE_NAME_PREFIX: 'legend-saga: v'

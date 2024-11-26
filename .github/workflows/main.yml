@@ -46,7 +46,7 @@ jobs:
           author_email: github-actions[bot]@users.noreply.github.com
           default_author: github_actor
           message: 'New library version ${{ env.LAST_TAG }} (publish)'
-          fetch: false
+          fetch: true
           pathspec_error_handling: ignore
           push: true
           tag: ${{ env.LAST_TAG }}
