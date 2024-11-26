@@ -1,3 +1,4 @@
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use strum_macros::{AsRefStr, EnumIter, EnumString};
@@ -44,6 +45,8 @@ pub enum MicroserviceEvent {
     SocialNewUser,
     #[strum(serialize = "social.unblock_chat")]
     SocialUnblockChat,
+    #[strum(serialize = "social.updated_user")]
+    SocialUpdatedUser,
     #[strum(serialize = "social_media_rooms.delete_in_batch")]
     SocialMediaRoomsDeleteInBatch,
 }
@@ -52,7 +55,7 @@ pub trait PayloadEvent {
     fn event_type(&self) -> MicroserviceEvent;
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct TestImagePayload {
     pub image: String,
@@ -64,7 +67,7 @@ impl PayloadEvent for TestImagePayload {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct TestMintPayload {
     pub mint: String,
@@ -88,7 +91,7 @@ impl PayloadEvent for AuthDeletedUserPayload {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct AuthLogoutUserPayload {
     pub user_id: String,
@@ -100,7 +103,7 @@ impl PayloadEvent for AuthLogoutUserPayload {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct AuthNewUserPayload {
     pub id: String,
@@ -115,7 +118,7 @@ impl PayloadEvent for AuthNewUserPayload {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct CoinsUpdateSubscriptionPayload {
     pub user_id: String,
@@ -128,7 +131,7 @@ impl PayloadEvent for CoinsUpdateSubscriptionPayload {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct CoinsNotifyClientPayload {
     pub room: String,
@@ -141,7 +144,7 @@ impl PayloadEvent for CoinsNotifyClientPayload {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct CoinsSendEmailPayload {
     pub user_id: String,
@@ -156,7 +159,7 @@ impl PayloadEvent for CoinsSendEmailPayload {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct LegendMissionsCompletedMissionRewardEventPayload {
     pub user_id: String,
@@ -169,7 +172,7 @@ impl PayloadEvent for LegendMissionsCompletedMissionRewardEventPayload {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct LegendMissionsOngoingMissionEventPayload {
     pub redis_key: String,
@@ -181,21 +184,14 @@ impl PayloadEvent for LegendMissionsOngoingMissionEventPayload {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq)]
-#[serde(rename_all = "PascalCase")]
-pub enum RankingsRewardsType {
-    Legends,
-    CodeExchange,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct RankingWinners {
     pub user_id: String,
     pub reward: i32,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct CompletedRanking {
     pub title: String,
@@ -203,11 +199,11 @@ pub struct CompletedRanking {
     pub author_email: String,
     pub ends_at: String,
     pub reward: String,
-    pub reward_type: RankingsRewardsType,
+    pub reward_type: String,
     pub winners: Vec<RankingWinners>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct LegendRankingsRankingsFinishedEventPayload {
     pub completed_rankings: Vec<CompletedRanking>,
@@ -219,7 +215,7 @@ impl PayloadEvent for LegendRankingsRankingsFinishedEventPayload {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Room {
     #[serde(rename = "Id")]
@@ -239,7 +235,7 @@ pub struct Room {
     pub have_editor: bool,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct RoomCreatorCreatedRoomPayload {
     #[serde(rename = "room")]
     pub room: Room,
@@ -251,7 +247,7 @@ impl PayloadEvent for RoomCreatorCreatedRoomPayload {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct RoomCreatorUpdatedRoomPayload {
     #[serde(rename = "room")]
     pub room: Room,
@@ -263,7 +259,7 @@ impl PayloadEvent for RoomCreatorUpdatedRoomPayload {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct RoomInventoryUpdateVpBuildingImagePayload {
     pub images: Vec<String>,
@@ -277,7 +273,7 @@ impl PayloadEvent for RoomInventoryUpdateVpBuildingImagePayload {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct RoomSnapshotBuildingChangeInIslandPayload {
     pub building: String,
@@ -290,7 +286,7 @@ impl PayloadEvent for RoomSnapshotBuildingChangeInIslandPayload {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct RoomSnapshotFirstSnapshotPayload {
     pub slug: String,
@@ -302,7 +298,7 @@ impl PayloadEvent for RoomSnapshotFirstSnapshotPayload {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct SocialBlockChatPayload {
     pub user_id: String,
@@ -315,7 +311,7 @@ impl PayloadEvent for SocialBlockChatPayload {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct SocialMediaRoomsDeleteInBatchPayload {
     pub bucket_name: String,
@@ -328,10 +324,72 @@ impl PayloadEvent for SocialMediaRoomsDeleteInBatchPayload {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+/// Gender represents the possible genders a social user can have.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "UPPERCASE")]
+pub enum Gender {
+    Male,
+    Female,
+    Undefined,
+}
+
+/// Represents the geographical location of a user
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct UserLocation {
+    pub continent: String,
+    pub country: String,
+    pub region: String,
+    pub city: String,
+}
+
+/// SocialUser represents the social user model.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SocialUser {
+    #[serde(rename = "_id")]
+    pub id: String,
+    pub username: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub first_name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub last_name: Option<String>,
+    pub gender: Gender,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub is_public_profile: Option<bool>,
+    pub followers: Vec<String>,
+    pub following: Vec<String>,
+    pub email: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub birthday: Option<DateTime<Utc>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub location: Option<UserLocation>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub avatar: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub avatar_screenshot: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub user_image: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub glb_url: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub social_media: Option<HashMap<String, String>>,
+    pub preferences: Vec<String>,
+    pub blocked_users: Vec<String>,
+    #[serde(rename = "RPMAvatarId", skip_serializing_if = "Option::is_none")]
+    pub rpm_avatar_id: Option<String>,
+    #[serde(rename = "RPMUserId", skip_serializing_if = "Option::is_none")]
+    pub rpm_user_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub paid_price_id: Option<String>,
+    pub created_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct SocialNewUserPayload {
-    pub user_id: String,
+    pub social_user: SocialUser,
 }
 
 impl PayloadEvent for SocialNewUserPayload {
@@ -340,7 +398,19 @@ impl PayloadEvent for SocialNewUserPayload {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct SocialUpdatedUserPayload {
+    pub social_user: SocialUser,
+}
+
+impl PayloadEvent for SocialUpdatedUserPayload {
+    fn event_type(&self) -> MicroserviceEvent {
+        MicroserviceEvent::SocialUpdatedUser
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct SocialUnblockChatPayload {
     pub user_id: String,

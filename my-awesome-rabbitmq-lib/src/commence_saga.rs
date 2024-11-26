@@ -19,7 +19,7 @@ pub trait PayloadCommenceSaga {
     fn saga_title(&self) -> SagaTitle;
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UserReward {
     pub user_id: String,
@@ -31,7 +31,7 @@ impl PartialEq for UserReward {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct RankingsUsersRewardPayload {
     pub rewards: Vec<UserReward>,
@@ -42,7 +42,7 @@ impl PayloadCommenceSaga for RankingsUsersRewardPayload {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct PurchaseResourceFlowPayload {
     pub user_id: String,
