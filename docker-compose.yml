@@ -13,6 +13,8 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+    tmpfs:
+      - /var/lib/rabbitmq
   wait-for-services-to-be-ready:
     image: hello-world
     depends_on:

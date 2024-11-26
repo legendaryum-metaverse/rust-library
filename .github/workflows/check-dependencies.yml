@@ -1,0 +1,88 @@
+name: check_minor_dependencies
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '30 17 1,15 * *' # 5:30 PM UTC on the 1st and 15th of every month
+
+env:
+  CARGO_INCREMENTAL: 0
+  FORCE_COLOR: 3
+defaults:
+  run:
+    shell: bash
+
+# *************************   TRIGGERING FURTHER WORKFLOW RUNS ***************************
+# https://github.com/peter-evans/create-pull-request/blob/main/docs/concepts-guidelines.md#triggering-further-workflow-runs
+# use  Cargo audit for dependencies!
+jobs:
+  update_minor_dependencies:
+    timeout-minutes: 10
+    if: github.event.repository.full_name == github.repository
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Setup Rust toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+
+      - name: Install cargo-edit
+        run: cargo install cargo-edit
+
+      - name: Save old Cargo.toml content
+        run: cp Cargo.toml Cargo.toml.old
+
+      - name: Update dependencies
+        run: |
+          cargo upgrade -i allow
+          cargo update
+
+      - name: Generate change log
+        id: generate_changelog
+        run: |
+          CHANGE_LOG="| Package | Old Version | New Version |\n"
+          CHANGE_LOG+="|---------|-------------|-------------|\n"
+
+          # Extraer dependencias usando grep (más sencillo)
+          extract_deps() {
+            cat $1 | grep -E '^\s*[a-zA-Z0-9_-]+\s*=' | grep -v -E '^\s*(name|version|edition)\s*='
+          }
+
+          old_deps=$(extract_deps Cargo.toml.old)
+          new_deps=$(extract_deps Cargo.toml)
+
+          while IFS= read -r new_dep; do
+            pkg=$(echo "$new_dep" | cut -d' ' -f1)
+            new_ver=$(echo "$new_dep" | cut -d'=' -f2- | sed 's/^[[:space:]]*//')
+            old_ver=$(echo "$old_deps" | grep "^$pkg " | cut -d'=' -f2- | sed 's/^[[:space:]]*//')
+            if [[ "$old_ver" != "$new_ver" ]]; then
+              CHANGE_LOG+="| $pkg | ${old_ver:-N/A} | $new_ver |\n"
+            fi
+          done <<< "$new_deps"
+
+          echo "CHANGE_LOG<<EOF" >> $GITHUB_ENV
+          echo -e "$CHANGE_LOG" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+      - name: Cleanup
+        run: rm Cargo.toml.old
+
+      - name: Create PR
+        uses: peter-evans/create-pull-request@v6
+        with:
+          title: 'dependencies: Upgrade RUST packages (automated)'
+          branch: 'upgrade-rust-packages'
+          base: 'dev'
+          commit-message: 'dependencies: Upgrade RUST packages (automated)'
+          body: |
+            ### ⚠ Importante leer antes de hacer merge a dev
+            >Cerrar esta **PR** y abrirla de nuevo para que corran las **actions**
+            de **code-quality-check**.
+
+            >Luego _merge_ a **dev**.
+
+            ### Cambios de versiones (todas las dependencias)
+            ${{ env.CHANGE_LOG }}
