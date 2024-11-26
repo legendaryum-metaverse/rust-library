@@ -31,5 +31,5 @@ test:
 .PHONY: test
 
 test-compile:
-	@cargo test -p my-awesome-rabbitmq-lib --no-run --locked
+	@cargo test -p legend-saga --no-run --locked
 .PHONY: test-compile

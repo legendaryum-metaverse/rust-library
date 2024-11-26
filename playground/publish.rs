@@ -1,5 +1,5 @@
-use my_awesome_rabbitmq_lib::connection::{AvailableMicroservices, RabbitMQClient};
-use my_awesome_rabbitmq_lib::events::{AuthDeletedUserPayload, MicroserviceEvent};
+use legend_saga::connection::{AvailableMicroservices, RabbitMQClient};
+use legend_saga::events::{AuthDeletedUserPayload, MicroserviceEvent};
 use std::error::Error;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
