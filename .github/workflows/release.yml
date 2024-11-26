@@ -49,6 +49,8 @@ jobs:
           fetch: false
           pathspec_error_handling: ignore
           push: true
+          tag: ${{ env.LAST_TAG }}
+          tag_push: '--force'
       - name: Generate Notification
         id: notification
         continue-on-error: true
