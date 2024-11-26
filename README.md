@@ -4,7 +4,7 @@
 
 ## Finishing the app
 
-Pendientes:
+Pendiente:
 
 - docs -> https://github.com/rust-lang/futures-rs/blob/7211cb7c5d8d859fa28ae55808c763a09d502827/.github/workflows/ci.yml#L306
 - review Best Practices: https://www.cloudamqp.com/blog/part4-rabbitmq-13-common-errors.html
