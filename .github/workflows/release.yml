@@ -17,7 +17,7 @@ env:
 
 jobs:
   releaser:
-    timeout-minutes: 10
+    timeout-minutes: 5
     name: Release new version
     permissions:
       contents: write
