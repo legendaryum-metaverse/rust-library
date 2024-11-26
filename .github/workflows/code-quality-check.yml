@@ -40,8 +40,7 @@ jobs:
         run: make lint-fix
 
       - name: Prettier additional files
-        run: |
-          make prettier
+        run: make prettier
 
       - name: Check if files changed
         id: check-if-files-changed
