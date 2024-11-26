@@ -17,6 +17,7 @@ env:
 
 jobs:
   releaser:
+    if: github.event.pull_request.merged == true
     timeout-minutes: 5
     name: Release new version
     permissions:
