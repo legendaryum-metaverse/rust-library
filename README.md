@@ -43,8 +43,10 @@
 
 ## Flags
 
-It has `std` y `events`features flags, `std` is the main app, `events = ["serde", "strum", "strum_macros"]`
-are used to handle types, payloads, enum, struct of the app.
+`std` y `events`features flags:
+
+- `std` is the main app,
+- `events = ["serde", "strum", "strum_macros"]` are used to handle types, payloads, enum, struct of the app.
 
 ## Contributors
 
