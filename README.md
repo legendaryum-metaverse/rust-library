@@ -2,16 +2,6 @@
 
 ---
 
-To generate the file
-
-```bash
-fd -e go . ./golang_library | xargs -I {} sh -c 'echo "// {}"; cat "{}"' | tee library.go
-fd -e ts . ./packages/legend-transac/src/ | xargs -I {} sh -c 'echo "// {}"; cat "{}"' | tee library.ts
-fd -e rs . ./src/ | xargs -I {} sh -c 'echo "// {}"; cat "{}"' | tee library.rs
-```
-
----
-
 ## Finishing the app
 
 Pendientes:
