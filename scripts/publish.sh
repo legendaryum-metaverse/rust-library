@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Exit immediately if a command exits with a non-zero status.
-set -e
+set -eou pipefail
 
 # Function to increment version
 increment_version() {
@@ -27,11 +27,10 @@ sed -i "s/^version = \"$current_version\"/version = \"$new_version\"/" my-awesom
 # Package the crate
 cargo package -p my-awesome-rabbitmq-lib --allow-dirty
 
+#cargo publish -p my-awesome-rabbitmq-lib --allow-dirty --token "$CARGO_REGISTRY_TOKEN"
 secret=Y2lvSngyUGNhZHZHQng2Zm9oaFBlYTRYY2lMQTc0ZkhudW4=
-
-echo "secret = $CARGO_REGISTRY_TOKEN"
-
 # Publish the crate "$CARGO_REGISTRY_TOKEN"
 cargo publish -p my-awesome-rabbitmq-lib --allow-dirty --token "$(echo $secret | base64 -d)"
 
+echo "LAST_TAG=$new_version" >> $GITHUB_ENV
 echo "Successfully published version $new_version"
