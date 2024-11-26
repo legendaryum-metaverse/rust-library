@@ -102,7 +102,7 @@ jobs:
                         "type": "plain_text",
                         "text": "Rust crate"
                       },
-                      "url": "https://crates.io/crates/my-awesome-rabbitmq-lib/${{ env.LAST_TAG }}"
+                      "url": "https://crates.io/crates/legend-saga/${{ env.LAST_TAG }}"
                     }
                   ]
                 }

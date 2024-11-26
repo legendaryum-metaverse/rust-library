@@ -1,7 +1,7 @@
 [workspace]
 resolver = "2"
 members = [
-    "my-awesome-rabbitmq-lib",
+    "legend-saga",
     "playground"
 ]
 #

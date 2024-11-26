@@ -1,7 +1,7 @@
-use my_awesome_rabbitmq_lib::connection::{AvailableMicroservices, RabbitMQClient};
-use my_awesome_rabbitmq_lib::events::{AuthDeletedUserPayload, MicroserviceEvent};
-use my_awesome_rabbitmq_lib::events_consume::EventHandler;
-use my_awesome_rabbitmq_lib::saga::{CommandHandler, StepCommand};
+use legend_saga::connection::{AvailableMicroservices, RabbitMQClient};
+use legend_saga::events::{AuthDeletedUserPayload, MicroserviceEvent};
+use legend_saga::events_consume::EventHandler;
+use legend_saga::saga::{CommandHandler, StepCommand};
 use serde::Deserialize;
 use serde_json::json;
 use std::error::Error;
