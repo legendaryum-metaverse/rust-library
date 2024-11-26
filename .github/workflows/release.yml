@@ -16,8 +16,8 @@ env:
   FORCE_COLOR: 3
 
 jobs:
-  goreleaser:
-    timeout-minutes: 1
+  releaser:
+    timeout-minutes: 10
     name: Release new version
     permissions:
       contents: write
@@ -39,67 +39,67 @@ jobs:
         run: |
           cargo publish -p my-awesome-rabbitmq-lib
 
-      - name: Generate Notification
-        id: notification
-        continue-on-error: true
-        uses: slackapi/slack-github-action@v1.25.0
-        with:
-          payload: |
-            {
-              "text": "Release Notification: ${{ github.repository }}",
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": ":tada: *New Release Available* :tada:"
-                  }
-                },
-                {
-                  "type": "section",
-                  "fields": [
-                    {
-                      "type": "mrkdwn",
-                      "text": "*Repository:*\n${{ github.repository }}"
-                    },
-                    {
-                      "type": "mrkdwn",
-                      "text": "*Branch:*\n${{ github.ref_name }}"
-                    },
-                    {
-                      "type": "mrkdwn",
-                      "text": "*Commit SHA:*\n${{ github.sha }}"
-                    }
-                  ]
-                },
-                {
-                  "type": "actions",
-                  "elements": [
-                    {
-                      "type": "button",
-                      "text": {
-                        "type": "plain_text",
-                        "text": "View Release Details"
-                      },
-                      "url": "https://github.com/${{ github.repository }}/releases/tag/${{ env.LAST_TAG }}"
-                    }
-                  ]
-                },
-                {
-                  "type": "actions",
-                  "elements": [
-                    {
-                      "type": "button",
-                      "text": {
-                        "type": "plain_text",
-                        "text": "go library"
-                      },
-                      "url": "https://pkg.go.dev/github.com/legendaryum-metaverse/saga"
-                    }
-                  ]
-                }
-              ]
-            }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+#      - name: Generate Notification
+#        id: notification
+#        continue-on-error: true
+#        uses: slackapi/slack-github-action@v1.25.0
+#        with:
+#          payload: |
+#            {
+#              "text": "Release Notification: ${{ github.repository }}",
+#              "blocks": [
+#                {
+#                  "type": "section",
+#                  "text": {
+#                    "type": "mrkdwn",
+#                    "text": ":tada: *New Release Available* :tada:"
+#                  }
+#                },
+#                {
+#                  "type": "section",
+#                  "fields": [
+#                    {
+#                      "type": "mrkdwn",
+#                      "text": "*Repository:*\n${{ github.repository }}"
+#                    },
+#                    {
+#                      "type": "mrkdwn",
+#                      "text": "*Branch:*\n${{ github.ref_name }}"
+#                    },
+#                    {
+#                      "type": "mrkdwn",
+#                      "text": "*Commit SHA:*\n${{ github.sha }}"
+#                    }
+#                  ]
+#                },
+#                {
+#                  "type": "actions",
+#                  "elements": [
+#                    {
+#                      "type": "button",
+#                      "text": {
+#                        "type": "plain_text",
+#                        "text": "View Release Details"
+#                      },
+#                      "url": "https://github.com/${{ github.repository }}/releases/tag/${{ env.LAST_TAG }}"
+#                    }
+#                  ]
+#                },
+#                {
+#                  "type": "actions",
+#                  "elements": [
+#                    {
+#                      "type": "button",
+#                      "text": {
+#                        "type": "plain_text",
+#                        "text": "go library"
+#                      },
+#                      "url": "https://pkg.go.dev/github.com/legendaryum-metaverse/saga"
+#                    }
+#                  ]
+#                }
+#              ]
+#            }
+#        env:
+#          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+#          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
