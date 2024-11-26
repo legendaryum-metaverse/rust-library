@@ -75,14 +75,14 @@ jobs:
         with:
           title: 'dependencies: Upgrade RUST packages (automated)'
           branch: 'upgrade-rust-packages'
-          base: 'dev'
+          base: 'main'
           commit-message: 'dependencies: Upgrade RUST packages (automated)'
           body: |
-            ### ⚠ Importante leer antes de hacer merge a dev
+            ### ⚠ Importante leer antes de hacer merge a main
             >Cerrar esta **PR** y abrirla de nuevo para que corran las **actions**
             de **code-quality-check**.
 
-            >Luego _merge_ a **dev**.
+            >Luego _merge_ a **main**.
 
             ### Cambios de versiones (todas las dependencias)
             ${{ env.CHANGE_LOG }}
