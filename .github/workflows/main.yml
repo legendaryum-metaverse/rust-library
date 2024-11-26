@@ -16,25 +16,6 @@ env:
   FORCE_COLOR: 3
 
 jobs:
-  release:
-    needs: [new_version]
-    timeout-minutes: 2
-    runs-on: ubuntu-latest
-    name: Release new version
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Release
-        uses: docker://antonyurchenko/git-release:latest
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          DRAFT_RELEASE: false
-          PRE_RELEASE: false
-          CHANGELOG_FILE: CHANGELOG.md
-          ALLOW_EMPTY_CHANGELOG: true
-          RELEASE_NAME_PREFIX: 'legend-saga: v'
-
   new_version:
     if: github.event.pull_request.merged == true
     timeout-minutes: 5
@@ -70,6 +51,22 @@ jobs:
           push: true
           tag: ${{ env.LAST_TAG }}
           tag_push: '--force'
+      - name: Create Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ env.LAST_TAG }}
+        run: |
+          # Read changelog if it exists
+          CHANGELOG=""
+          if [ -f CHANGELOG.md ]; then
+            CHANGELOG=$(cat CHANGELOG.md)
+          fi
+
+          # Create the release using GitHub API
+          gh release create "$TAG" \
+            --title "legend-saga: $TAG" \
+            --notes "${CHANGELOG:-"Release $TAG"}" \
+            --verify-tag
       - name: Generate Notification
         id: notification
         continue-on-error: true
