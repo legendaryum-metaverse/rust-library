@@ -26,11 +26,8 @@ sed -i "s/^version = \"$current_version\"/version = \"$new_version\"/" legend-sa
 
 # Package the crate
 cargo package -p legend-saga --allow-dirty
-
-#cargo publish -p legend-saga --allow-dirty --token "$CARGO_REGISTRY_TOKEN"
-secret=Y2lvSngyUGNhZHZHQng2Zm9oaFBlYTRYY2lMQTc0ZkhudW4=
-# Publish the crate "$CARGO_REGISTRY_TOKEN"
-cargo publish -p legend-saga --allow-dirty --token "$(echo $secret | base64 -d)"
+# Publish the crate
+cargo publish -p legend-saga --allow-dirty --token "$CARGO_REGISTRY_TOKEN"
 
 echo "LAST_TAG=$new_version" >> $GITHUB_ENV
 echo "Successfully published version $new_version"
