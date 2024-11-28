@@ -20,9 +20,11 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with: # Se necesita pararse en el PR y no en el commit para un posible push
-          repository: ${{ github.event.pull_request.head.repo.full_name }}
-          ref: ${{ github.event.pull_request.head.ref }}
+        with:
+          # Se necesita pararse en el PR y no en el commit para un posible push, si el trigger es una pr mergeada
+          # es posible que la rama ya haya sido eliminada
+          repository: ${{ github.event.pull_request.merged != true && github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.merged != true && github.event.pull_request.head.ref }}
 
       - name: Prettier Build (background)
         run: |
