@@ -20,11 +20,11 @@ jobs:
     steps:
       - name: Checkout code
         #  Si el trigger es una pr mergeada es posible que la rama ya haya sido eliminada
-        if : ${{ github.event.pull_request.merged == true }}
+        if: ${{ github.event.pull_request.merged == true }}
         uses: actions/checkout@v4
 
       - name: Checkout code
-        if : ${{ github.event.pull_request.merged != true }}
+        if: ${{ github.event.pull_request.merged != true }}
         uses: actions/checkout@v4
         with: # Se necesita pararse en el PR y no en el commit para un posible push
           repository: ${{ github.event.pull_request.head.repo.full_name }}
