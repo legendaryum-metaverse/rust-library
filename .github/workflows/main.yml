@@ -16,8 +16,15 @@ env:
   FORCE_COLOR: 3
 
 jobs:
-  new_version:
+  code_quality_check:
     if: github.event.pull_request.merged == true
+    permissions:
+      contents: write
+      pull-requests: write
+    uses: ./.github/workflows/code-quality-check.yml
+    secrets: inherit
+  new_version:
+    needs: [code_quality_check]
     timeout-minutes: 5
     name: New version
     permissions:
