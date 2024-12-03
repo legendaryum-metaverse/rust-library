@@ -27,6 +27,8 @@ pub enum MicroserviceEvent {
     LegendMissionsCompletedMissionReward,
     #[strum(serialize = "legend_missions.ongoing_mission")]
     LegendMissionsOngoingMission,
+    #[strum(serialize = "legend_rankings.crypto_ranking_finished")]
+    LegendRankingsCryptoRankingFinished,
     #[strum(serialize = "legend_rankings.rankings_finished")]
     LegendRankingsRankingsFinished,
     #[strum(serialize = "room_creator.created_room")]
@@ -181,6 +183,32 @@ pub struct LegendMissionsOngoingMissionEventPayload {
 impl PayloadEvent for LegendMissionsOngoingMissionEventPayload {
     fn event_type(&self) -> MicroserviceEvent {
         MicroserviceEvent::LegendMissionsOngoingMission
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct CryptoRankingWinners {
+    pub user_id: String,
+    pub reward: f64,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct CompletedCryptoRanking {
+    pub wallet_address: String,
+    pub winners: Vec<CryptoRankingWinners>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct LegendRankingsCryptoRankingFinishedPayload {
+    pub completed_crypto_rankings: Vec<CompletedCryptoRanking>,
+}
+
+impl PayloadEvent for LegendRankingsCryptoRankingFinishedPayload {
+    fn event_type(&self) -> MicroserviceEvent {
+        MicroserviceEvent::LegendRankingsCryptoRankingFinished
     }
 }
 
