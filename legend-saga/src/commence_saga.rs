@@ -61,7 +61,7 @@ impl PayloadCommenceSaga for PurchaseResourceFlowPayload {
 #[serde(rename_all = "camelCase")]
 pub struct CryptoRankingWinners {
     pub user_id: String,
-    pub reward: f64,
+    pub reward: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
