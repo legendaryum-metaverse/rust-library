@@ -201,6 +201,8 @@ pub struct CompletedRanking {
     pub reward: String,
     pub reward_type: String,
     pub winners: Vec<RankingWinners>,
+    pub nft_blockchain_network: Option<String>,
+    pub nft_contract_address: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
