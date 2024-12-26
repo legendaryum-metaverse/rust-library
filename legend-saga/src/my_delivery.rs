@@ -7,19 +7,19 @@ pub struct MyDelivery {
     /// acknowledging the message.
     pub delivery_tag: DeliveryTag,
 
-    /// The exchange of the message. May be an empty string
+    /// The exchange of the message. Maybe an empty string
     /// if the default exchange is used.
     pub exchange: ShortString,
 
-    /// The routing key of the message. May be an empty string
-    /// if no routing key is specified.
+    // /// The routing key of the message. Maybe an empty string
+    // /// if no routing key is specified.
     // pub routing_key: ShortString,
 
-    /// Whether this message was redelivered
+    // /// Whether this message was redelivered
     // pub redelivered: bool,
 
-    /// Contains the properties and the headers of the
-    /// message.
+    // /// Contains the properties and the headers of the
+    // /// message.
     // pub properties: BasicProperties,
 
     /// The payload of the message in binary format.
