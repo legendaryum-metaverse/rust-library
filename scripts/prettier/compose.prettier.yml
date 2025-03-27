@@ -5,3 +5,4 @@ services:
       dockerfile: prettier.Dockerfile
     volumes:
       - ../../:/app
+      - /app/target

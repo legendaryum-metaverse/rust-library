@@ -37,7 +37,8 @@ pub(crate) mod setup {
     use crate::connection::{AvailableMicroservices, RabbitMQClient, RabbitMQError};
     use lapin::types::FieldTable;
     use lapin::BasicProperties;
-    use rand::distributions::{Distribution, Standard};
+    use rand::distr::StandardUniform;
+    use rand::prelude::Distribution;
     use rand::Rng;
     use serde::de::DeserializeOwned;
     use serde::Serialize;
@@ -142,18 +143,17 @@ pub(crate) mod setup {
         pub microservice: AvailableMicroservices,
     }
 
-    impl Distribution<AvailableMicroservices> for Standard {
+    impl Distribution<AvailableMicroservices> for StandardUniform {
         fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> AvailableMicroservices {
             use strum::IntoEnumIterator;
             AvailableMicroservices::iter()
-                .nth(rng.gen_range(0..AvailableMicroservices::iter().count()))
+                .nth(rng.random_range(0..AvailableMicroservices::iter().count()))
                 .unwrap()
         }
     }
 
     pub fn random_microservice() -> AvailableMicroservices {
-        let mut rng = rand::thread_rng();
-        rng.gen()
+        rand::rng().random()
     }
 
     impl TestSetup {
