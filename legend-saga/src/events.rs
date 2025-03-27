@@ -29,6 +29,10 @@ pub enum MicroserviceEvent {
     LegendMissionsOngoingMission,
     #[strum(serialize = "legend_rankings.rankings_finished")]
     LegendRankingsRankingsFinished,
+    #[strum(serialize = "legend_showcase.update_allowed_mission_subscription_ids")]
+    LegendShowcaseUpdateAllowedMissionSubscriptionIds,
+    #[strum(serialize = "legend_showcase.update_allowed_ranking_subscription_ids")]
+    LegendShowcaseUpdateAllowedRankingSubscriptionIds,
     #[strum(serialize = "room_creator.created_room")]
     RoomCreatorCreatedRoom,
     #[strum(serialize = "room_creator.updated_room")]
@@ -217,6 +221,32 @@ pub struct LegendRankingsRankingsFinishedEventPayload {
 impl PayloadEvent for LegendRankingsRankingsFinishedEventPayload {
     fn event_type(&self) -> MicroserviceEvent {
         MicroserviceEvent::LegendRankingsRankingsFinished
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct LegendShowcaseUpdateAllowedMissionSubscriptionIdsEventPayload {
+    pub product_virtual_slug: String,
+    pub allowed_subscription_ids: Vec<String>,
+}
+
+impl PayloadEvent for LegendShowcaseUpdateAllowedMissionSubscriptionIdsEventPayload {
+    fn event_type(&self) -> MicroserviceEvent {
+        MicroserviceEvent::LegendShowcaseUpdateAllowedMissionSubscriptionIds
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct LegendShowcaseUpdateAllowedRankingSubscriptionIdsEventPayload {
+    pub product_virtual_id: String,
+    pub allowed_subscription_ids: Vec<String>,
+}
+
+impl PayloadEvent for LegendShowcaseUpdateAllowedRankingSubscriptionIdsEventPayload {
+    fn event_type(&self) -> MicroserviceEvent {
+        MicroserviceEvent::LegendShowcaseUpdateAllowedRankingSubscriptionIds
     }
 }
 
