@@ -37,8 +37,8 @@ jobs:
 
       - name: Update dependencies
         run: |
-          cargo upgrade -i allow
           cargo update
+          cargo upgrade -i allow
 
       - name: Generate change log
         id: generate_changelog
