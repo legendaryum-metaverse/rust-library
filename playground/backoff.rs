@@ -14,7 +14,7 @@ fn pseudo_random() -> f32 {
 fn fallible_operation() -> Result<(), Error> {
     if pseudo_random() < 0.8 {
         // Simulating a failure
-        Err(Error::new(std::io::ErrorKind::Other, "Operation failed"))
+        Err(Error::other("Operation failed"))
     } else {
         Ok(())
     }

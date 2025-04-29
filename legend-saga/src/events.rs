@@ -29,6 +29,8 @@ pub enum MicroserviceEvent {
     LegendMissionsOngoingMission,
     #[strum(serialize = "legend_rankings.rankings_finished")]
     LegendRankingsRankingsFinished,
+    #[strum(serialize = "legend_showcase.product_virtual_deleted")]
+    LegendShowcaseProductVirtualDeleted,
     #[strum(serialize = "legend_showcase.update_allowed_mission_subscription_ids")]
     LegendShowcaseUpdateAllowedMissionSubscriptionIds,
     #[strum(serialize = "legend_showcase.update_allowed_ranking_subscription_ids")]
@@ -221,6 +223,21 @@ pub struct LegendRankingsRankingsFinishedEventPayload {
 impl PayloadEvent for LegendRankingsRankingsFinishedEventPayload {
     fn event_type(&self) -> MicroserviceEvent {
         MicroserviceEvent::LegendRankingsRankingsFinished
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct LegendShowcaseProductVirtualDeletedEventPayload {
+    /// Unique identifier of the deleted virtual product
+    pub product_virtual_id: String,
+    /// Slug of the deleted virtual product
+    pub product_virtual_slug: String,
+}
+
+impl PayloadEvent for LegendShowcaseProductVirtualDeletedEventPayload {
+    fn event_type(&self) -> MicroserviceEvent {
+        MicroserviceEvent::LegendShowcaseProductVirtualDeleted
     }
 }
 
