@@ -25,6 +25,8 @@ pub enum MicroserviceEvent {
     CoinsUpdateSubscription,
     #[strum(serialize = "legend_missions.completed_mission_reward")]
     LegendMissionsCompletedMissionReward,
+    #[strum(serialize = "legend_missions.new_mission_created")]
+    LegendMissionsNewMissionCreated,
     #[strum(serialize = "legend_missions.ongoing_mission")]
     LegendMissionsOngoingMission,
     #[strum(serialize = "legend_rankings.rankings_finished")]
@@ -175,6 +177,26 @@ pub struct LegendMissionsCompletedMissionRewardEventPayload {
 impl PayloadEvent for LegendMissionsCompletedMissionRewardEventPayload {
     fn event_type(&self) -> MicroserviceEvent {
         MicroserviceEvent::LegendMissionsCompletedMissionReward
+    }
+}
+
+/// Represents the fields that will be sent by email when a mission is created.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct LegendMissionsNewMissionCreatedEventPayload {
+    pub title: String,
+    pub author: String,
+    pub author_email: String,
+    pub reward: i32,
+    pub start_date: String,
+    pub end_date: String,
+    pub max_players_claiming_reward: i32,
+    pub time_to_reward: i32,
+}
+
+impl PayloadEvent for LegendMissionsNewMissionCreatedEventPayload {
+    fn event_type(&self) -> MicroserviceEvent {
+        MicroserviceEvent::LegendMissionsNewMissionCreated
     }
 }
 
