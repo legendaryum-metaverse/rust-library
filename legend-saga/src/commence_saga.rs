@@ -13,6 +13,7 @@ use crate::connection::{get_or_init_publish_channel, RabbitMQClient, RabbitMQErr
 pub enum SagaTitle {
     PurchaseResourceFlow,
     RankingsUsersReward,
+    TransferCryptoRewardToMissionWinner,
     TransferCryptoRewardToRankingWinners
 }
 
@@ -54,6 +55,23 @@ pub struct PurchaseResourceFlowPayload {
 impl PayloadCommenceSaga for PurchaseResourceFlowPayload {
     fn saga_title(&self) -> SagaTitle {
         SagaTitle::PurchaseResourceFlow
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct TransferCryptoRewardToMissionWinnerPayload {
+    /// Wallet address from which rewards will be transferred
+    pub wallet_address: String,
+    /// ID of the user who completed the mission
+    pub user_id: String,
+    /// Amount to be transferred
+    pub reward: String,
+}
+
+impl PayloadCommenceSaga for TransferCryptoRewardToMissionWinnerPayload {
+    fn saga_title(&self) -> SagaTitle {
+        SagaTitle::TransferCryptoRewardToMissionWinner
     }
 }
 

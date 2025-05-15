@@ -33,6 +33,9 @@ pub enum StepCommand {
     CreateUser,
 
     // Blockchain commands
+    #[strum(serialize = "crypto_reward:transfer_mission_reward_to_winner")]
+    #[serde(rename = "crypto_reward:transfer_mission_reward_to_winner")]
+    TransferMissionRewardToWinner,
     #[strum(serialize = "crypto_reward:transfer_reward_to_winners")]
     #[serde(rename = "crypto_reward:transfer_reward_to_winners")]
     TransferRewardToWinners,
