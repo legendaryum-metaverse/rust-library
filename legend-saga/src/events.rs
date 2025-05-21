@@ -29,6 +29,12 @@ pub enum MicroserviceEvent {
     LegendMissionsNewMissionCreated,
     #[strum(serialize = "legend_missions.ongoing_mission")]
     LegendMissionsOngoingMission,
+    #[strum(serialize = "legend_missions.send_email_crypto_mission_completed")]
+    LegendMissionsSendEmailCryptoMissionCompleted,
+    #[strum(serialize = "legend_missions.send_email_code_exchange_mission_completed")]
+    LegendMissionsSendEmailCodeExchangeMissionCompleted,
+    #[strum(serialize = "legend_missions.send_email_nft_mission_completed")]
+    LegendMissionsSendEmailNftMissionCompleted,
     #[strum(serialize = "legend_rankings.rankings_finished")]
     LegendRankingsRankingsFinished,
     #[strum(serialize = "legend_showcase.product_virtual_deleted")]
@@ -234,6 +240,52 @@ pub struct CompletedRanking {
     pub nft_contract_address: Option<String>,
     // Present only if reward_type is "Crypto"
     pub wallet_crypto_asset: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct LegendMissionsSendEmailCryptoMissionCompletedPayload {
+    pub user_id: String,
+    pub mission_title: String,
+    pub reward: i32,
+    pub blockchain_network: String,
+    pub crypto_asset: String,
+}
+
+impl PayloadEvent for LegendMissionsSendEmailCryptoMissionCompletedPayload {
+    fn event_type(&self) -> MicroserviceEvent {
+        MicroserviceEvent::LegendMissionsSendEmailCryptoMissionCompleted
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct LegendMissionsSendEmailCodeExchangeMissionCompletedPayload {
+    pub user_id: String,
+    pub mission_title: String,
+    pub code_value: String,
+    pub code_description: String,
+}
+
+impl PayloadEvent for LegendMissionsSendEmailCodeExchangeMissionCompletedPayload {
+    fn event_type(&self) -> MicroserviceEvent {
+        MicroserviceEvent::LegendMissionsSendEmailCodeExchangeMissionCompleted
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct LegendMissionsSendEmailNftMissionCompletedPayload {
+    pub user_id: String,
+    pub mission_title: String,
+    pub nft_contract_address: String,
+    pub nft_token_id: String,
+}
+
+impl PayloadEvent for LegendMissionsSendEmailNftMissionCompletedPayload {
+    fn event_type(&self) -> MicroserviceEvent {
+        MicroserviceEvent::LegendMissionsSendEmailNftMissionCompleted
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
