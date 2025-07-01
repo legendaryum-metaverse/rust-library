@@ -51,18 +51,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         r#"
             {{
                 "roomId": "room123",
-                "templateId": "{}",
+                "templateId": "{template_id}",
                 "userId": "user789",
                 "images": ["https://example.com/image1.jpg", "https://example.com/image2.jpg"]
             }}
-            "#,
-        template_id
+            "#
     );
 
     // Parse the payload
     match parse_payload_str::<ChangeTemplateId>(&json_payload) {
-        Ok(change_template) => println!("Parsed ChangeTemplateId: {:?}", change_template),
-        Err(e) => println!("Error parsing payload: {}", e),
+        Ok(change_template) => println!("Parsed ChangeTemplateId: {change_template:?}"),
+        Err(e) => println!("Error parsing payload: {e}"),
     }
     let json_payload_value = json!({
         "roomId": "room123",
@@ -73,26 +72,26 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Parse the payload
     match parse_payload_value::<ChangeTemplateId>(json_payload_value.clone()) {
-        Ok(change_template) => println!("Parsed ChangeTemplateId: {:?}", change_template),
-        Err(e) => println!("Error parsing payload: {}", e),
+        Ok(change_template) => println!("Parsed ChangeTemplateId: {change_template:?}"),
+        Err(e) => println!("Error parsing payload: {e}"),
     }
 
     // Parse the payload
     match parse_payload_str::<ChangeTemplateId>(&json_payload) {
-        Ok(change_template) => println!("Parsed ChangeTemplateId: {:?}", change_template),
-        Err(e) => println!("Error parsing payload: {}", e),
+        Ok(change_template) => println!("Parsed ChangeTemplateId: {change_template:?}"),
+        Err(e) => println!("Error parsing payload: {e}"),
     }
 
     let another_hash_map = value_to_hashmap(json_payload_value)?;
-    println!("Parsed HashMap: {:?}", another_hash_map);
+    println!("Parsed HashMap: {another_hash_map:?}");
     // Parse JSON to HashMap
     let hashmap = json_to_hashmap(&json_payload)?;
-    println!("Parsed HashMap: {:?}", hashmap);
+    println!("Parsed HashMap: {hashmap:?}");
 
     // Parse the payload
     match parse_payload::<ChangeTemplateId>(&hashmap) {
-        Ok(change_template) => println!("Parsed ChangeTemplateId: {:?}", change_template),
-        Err(e) => println!("Error parsing payload: {}", e),
+        Ok(change_template) => println!("Parsed ChangeTemplateId: {change_template:?}"),
+        Err(e) => println!("Error parsing payload: {e}"),
     }
 
     Ok(())

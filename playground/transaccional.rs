@@ -16,7 +16,7 @@ struct MintPayload {
 async fn handle_mint_image(handler: &CommandHandler) -> Result<(), Box<dyn Error + Send + Sync>> {
     let mint_payload: MintPayload = handler.parse_payload()?;
 
-    println!("Parsed ChangeTemplateId: {:?}", mint_payload);
+    println!("Parsed ChangeTemplateId: {mint_payload:?}");
 
     let json_payload_value = json!({
         "tokenId": "room123",
@@ -57,7 +57,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 println!("Successfully handled MintImage command");
             }
             Err(e) => {
-                eprintln!("Error handling MintImage command: {:?}", e);
+                eprintln!("Error handling MintImage command: {e:?}");
                 handler
                     .nack_with_delay(Duration::from_millis(1000), 1)
                     .await
@@ -76,13 +76,13 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 handler.get_payload()
             );
             let p: AuthDeletedUserPayload = handler.parse_payload()?;
-            println!("Payload {:?} ", p);
+            println!("Payload {p:?} ");
             handler.ack().await?;
             Ok(())
         }
 
         if let Err(e) = handler_fn(&handler).await {
-            eprintln!("Error handling AuthDeletedUser event: {:?}", e);
+            eprintln!("Error handling AuthDeletedUser event: {e:?}");
             handler
                 .nack_with_delay(Duration::from_millis(1000), 1)
                 .await

@@ -17,7 +17,7 @@ impl RabbitMQClient {
         events: &[MicroserviceEvent],
     ) -> Result<(), lapin::Error> {
         let channel = self.events_channel.lock().await;
-        let requeue_queue = format!("{}_matching_requeue", queue_name);
+        let requeue_queue = format!("{queue_name}_matching_requeue");
 
         // Assert exchanges
         channel
@@ -110,7 +110,7 @@ impl RabbitMQClient {
                 .await?;
 
             // Assert requeue exchange and bind to MatchingRequeue exchange
-            let requeue_exchange = format!("{}_requeue", event_str);
+            let requeue_exchange = format!("{event_str}_requeue");
             channel
                 .exchange_declare(
                     &requeue_exchange,
@@ -161,7 +161,7 @@ impl RabbitMQClient {
                     .await?;
 
                 // Assert and bind microservice-specific exchange
-                let micro_event_exchange = format!("{}_{}", event_str, queue_name);
+                let micro_event_exchange = format!("{event_str}_{queue_name}");
                 channel
                     .exchange_declare(
                         &micro_event_exchange,
@@ -203,7 +203,7 @@ impl RabbitMQClient {
                     .queue_unbind(&requeue_queue, &requeue_exchange, "", headers_args.clone())
                     .await?;
 
-                let micro_event_exchange = format!("{}_{}", event_str, queue_name);
+                let micro_event_exchange = format!("{event_str}_{queue_name}");
                 channel
                     .exchange_delete(
                         &micro_event_exchange,
@@ -227,8 +227,8 @@ impl RabbitMQClient {
         for consumer in consumers {
             let queue_name = &consumer.queue_name;
             let exchange = &consumer.exchange;
-            let requeue_queue = format!("{}_requeue", queue_name);
-            let routing_key = format!("{}_routing_key", queue_name);
+            let requeue_queue = format!("{queue_name}_requeue");
+            let routing_key = format!("{queue_name}_routing_key");
 
             // Assert exchange and queue for the consumer
             channel
@@ -339,8 +339,7 @@ mod test_consumers {
             for exchange in known_exchanges {
                 assert!(
                     exchanges.contains(&exchange.to_string()),
-                    "Exchange {} not found",
-                    exchange
+                    "Exchange {exchange} not found"
                 );
             }
 
@@ -350,8 +349,7 @@ mod test_consumers {
             for queue in know_queues {
                 assert!(
                     queues.contains(&queue.to_string()),
-                    "Queue {} not found",
-                    queue
+                    "Queue {queue} not found"
                 );
             }
         });
@@ -394,8 +392,7 @@ mod test_consumers {
                 for exchange in known_exchanges {
                     assert!(
                         exchanges.contains(&exchange.to_string()),
-                        "Exchange {} not found",
-                        exchange
+                        "Exchange {exchange} not found"
                     );
                 }
 
@@ -404,8 +401,7 @@ mod test_consumers {
                 for queue in known_queues {
                     assert!(
                         queues.contains(&queue.to_string()),
-                        "Queue {} not found",
-                        queue
+                        "Queue {queue} not found"
                     );
                 }
             }
@@ -434,8 +430,7 @@ mod test_consumers {
                 for queue in known_queues {
                     assert!(
                         queues.contains(&queue.to_string()),
-                        "Queue {} not found",
-                        queue
+                        "Queue {queue} not found"
                     );
                 }
                 // verifying exchanges
