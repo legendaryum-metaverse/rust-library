@@ -96,7 +96,7 @@ fn main() {
 
     // You can also emit events with primitive types
     event_bus.on("simple_event", |message: &String| {
-        println!("Received simple event: {}", message);
+        println!("Received simple event: {message}");
     });
 
     event_bus.emit("simple_event", "Hello, World!".to_string());

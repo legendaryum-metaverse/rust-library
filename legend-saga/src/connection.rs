@@ -750,7 +750,7 @@ mod tests {
                 let client_clone = setup.client.clone();
                 let properties_clone = properties.clone();
                 let message = TestMessage {
-                    content: format!("Concurrent message {}", i),
+                    content: format!("Concurrent message {i}"),
                 };
 
                 publish_futures.push(tokio::spawn(async move {

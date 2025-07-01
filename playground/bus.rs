@@ -45,13 +45,13 @@ fn main() {
     // Spawn threads for subscribers
     let handle1 = thread::spawn(move || {
         for event in subscriber1 {
-            println!("Subscriber 1 received: {:?}", event);
+            println!("Subscriber 1 received: {event:?}");
         }
     });
 
     let handle2 = thread::spawn(move || {
         for event in subscriber2 {
-            println!("Subscriber 2 received: {:?}", event);
+            println!("Subscriber 2 received: {event:?}");
         }
     });
 

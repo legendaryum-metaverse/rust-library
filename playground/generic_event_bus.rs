@@ -97,7 +97,7 @@ async fn main() {
     emitter.on_with_async_handler(MicroserviceEvent::AuthDeletedUserEvent, move |handler| {
         let notify_shutdown_clone = notify_shutdown_2.clone();
         async move {
-            println!("Received AuthDeletedUserEvent: {:?}", handler);
+            println!("Received AuthDeletedUserEvent: {handler:?}");
             // Simulate some async operation
             tokio::time::sleep(std::time::Duration::from_millis(100)).await;
             println!("Finished processing AuthDeletedUserEvent");
