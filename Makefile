@@ -19,12 +19,8 @@ lint-fix:
 .PHONY: lint-fix
 
 prettier:
-	@COMPOSE_PROJECT_NAME=lib-prettier docker compose -f ./scripts/prettier/compose.prettier.yml run --rm prettier
+	@bun i && bun run format
 .PHONY: prettier
-
-prettier-build:
-	@COMPOSE_PROJECT_NAME=lib-prettier docker compose -f ./scripts/prettier/compose.prettier.yml --progress=plain build prettier
-.PHONY: prettier-build
 
 test:
 	@bash scripts/test.sh

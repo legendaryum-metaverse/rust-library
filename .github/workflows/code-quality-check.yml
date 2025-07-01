@@ -30,9 +30,8 @@ jobs:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.event.pull_request.head.ref }}
 
-      - name: Prettier Build (background)
-        run: |
-          nohup make prettier-build > /dev/null 2>&1 &
+      # para prettier
+      - uses: oven-sh/setup-bun@v2
 
       - name: Setup Rust toolchain
         uses: actions-rust-lang/setup-rust-toolchain@v1

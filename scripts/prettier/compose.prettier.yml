@@ -1,8 +1,0 @@
-services:
-  prettier:
-    build:
-      context: .
-      dockerfile: prettier.Dockerfile
-    volumes:
-      - ../../:/app
-      - /app/target
