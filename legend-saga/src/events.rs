@@ -247,7 +247,7 @@ pub struct CompletedRanking {
 pub struct LegendMissionsSendEmailCryptoMissionCompletedPayload {
     pub user_id: String,
     pub mission_title: String,
-    pub reward: i32,
+    pub reward: String,
     pub blockchain_network: String,
     pub crypto_asset: String,
 }
