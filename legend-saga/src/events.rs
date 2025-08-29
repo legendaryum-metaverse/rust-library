@@ -63,6 +63,8 @@ pub enum MicroserviceEvent {
     SocialUpdatedUser,
     #[strum(serialize = "social_media_rooms.delete_in_batch")]
     SocialMediaRoomsDeleteInBatch,
+    #[strum(serialize = "legend_rankings.new_ranking_created")]
+    LegendRankingsNewRankingCreated,
 }
 
 pub trait PayloadEvent {
@@ -198,6 +200,7 @@ pub struct LegendMissionsNewMissionCreatedEventPayload {
     pub end_date: String,
     pub max_players_claiming_reward: i32,
     pub time_to_reward: i32,
+    pub notification_config: Option<NotificationConfig>,
 }
 
 impl PayloadEvent for LegendMissionsNewMissionCreatedEventPayload {
@@ -548,3 +551,32 @@ impl PayloadEvent for SocialUnblockChatPayload {
         MicroserviceEvent::SocialUnblockChat
     }
 }
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct NotificationConfig {
+    pub custom_emails: Option<Vec<String>>,
+    pub template_name: String,
+}
+
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct LegendRankingsNewRankingCreatedEventPayload {
+    pub title: String,
+    pub description: String,
+    pub author_email: String,
+    pub reward_type: String,
+    pub ends_at: String,
+    pub nft_blockchain_network: Option<String>,
+    pub nft_contract_address: Option<String>,
+    pub wallet_crypto_asset: Option<String>,
+    pub notification_config: Option<NotificationConfig>,
+}
+
+impl PayloadEvent for LegendRankingsNewRankingCreatedEventPayload {
+    fn event_type(&self) -> MicroserviceEvent {
+        MicroserviceEvent::LegendRankingsNewRankingCreated
+    }
+}
+
