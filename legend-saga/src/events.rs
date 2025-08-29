@@ -559,7 +559,6 @@ pub struct NotificationConfig {
     pub template_name: String,
 }
 
-
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct LegendRankingsNewRankingCreatedEventPayload {
@@ -579,4 +578,3 @@ impl PayloadEvent for LegendRankingsNewRankingCreatedEventPayload {
         MicroserviceEvent::LegendRankingsNewRankingCreated
     }
 }
-
