@@ -226,9 +226,12 @@ impl PayloadEvent for LegendMissionsOngoingMissionEventPayload {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct MissionFinishedParticipant {
-    #[serde(skip_serializing_if = "Option::is_none")] pub user_id: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")] pub email: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")] pub position: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub user_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub email: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub position: Option<i32>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
