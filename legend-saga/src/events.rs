@@ -29,6 +29,8 @@ pub enum MicroserviceEvent {
     LegendMissionsNewMissionCreated,
     #[strum(serialize = "legend_missions.ongoing_mission")]
     LegendMissionsOngoingMission,
+    #[strum(serialize = "legend_missions.mission_finished")]
+    LegendMissionsMissionFinished,
     #[strum(serialize = "legend_missions.send_email_crypto_mission_completed")]
     LegendMissionsSendEmailCryptoMissionCompleted,
     #[strum(serialize = "legend_missions.send_email_code_exchange_mission_completed")]
@@ -218,6 +220,30 @@ pub struct LegendMissionsOngoingMissionEventPayload {
 impl PayloadEvent for LegendMissionsOngoingMissionEventPayload {
     fn event_type(&self) -> MicroserviceEvent {
         MicroserviceEvent::LegendMissionsOngoingMission
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct MissionFinishedParticipant {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub user_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub email: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub position: Option<i32>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct LegendMissionsMissionFinishedEventPayload {
+    pub mission_title: String,
+    pub participants: Vec<MissionFinishedParticipant>,
+}
+
+impl PayloadEvent for LegendMissionsMissionFinishedEventPayload {
+    fn event_type(&self) -> MicroserviceEvent {
+        MicroserviceEvent::LegendMissionsMissionFinished
     }
 }
 
