@@ -17,6 +17,8 @@ pub enum MicroserviceEvent {
     AuthLogoutUser,
     #[strum(serialize = "auth.new_user")]
     AuthNewUser,
+    #[strum(serialize = "auth.blocked_user")]
+    AuthBlockedUser,
     #[strum(serialize = "coins.notify_client")]
     CoinsNotifyClient,
     #[strum(serialize = "coins.send_email")]
@@ -133,6 +135,21 @@ pub struct AuthNewUserPayload {
 impl PayloadEvent for AuthNewUserPayload {
     fn event_type(&self) -> MicroserviceEvent {
         MicroserviceEvent::AuthNewUser
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AuthBlockedUserPayload {
+    pub user_id: String,
+    pub block_type: String,
+    pub block_reason: Option<String>,
+    pub block_expiration_hours: Option<i32>,
+}
+
+impl PayloadEvent for AuthBlockedUserPayload {
+    fn event_type(&self) -> MicroserviceEvent {
+        MicroserviceEvent::AuthBlockedUser
     }
 }
 
