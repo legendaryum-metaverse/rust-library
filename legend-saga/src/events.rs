@@ -69,6 +69,8 @@ pub enum MicroserviceEvent {
     SocialMediaRoomsDeleteInBatch,
     #[strum(serialize = "legend_rankings.new_ranking_created")]
     LegendRankingsNewRankingCreated,
+    #[strum(serialize = "legend_rankings.intermediate_reward")]
+    LegendRankingsIntermediateReward,
 }
 
 pub trait PayloadEvent {
@@ -619,5 +621,22 @@ pub struct LegendRankingsNewRankingCreatedEventPayload {
 impl PayloadEvent for LegendRankingsNewRankingCreatedEventPayload {
     fn event_type(&self) -> MicroserviceEvent {
         MicroserviceEvent::LegendRankingsNewRankingCreated
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct LegendRankingsIntermediateRewardEventPayload {
+    pub user_id: String,
+    pub ranking_id: i32,
+    pub intermediate_reward_type: String,
+    pub reward_config: serde_json::Value,
+    pub template_name: String,
+    pub template_data: serde_json::Value,
+}
+
+impl PayloadEvent for LegendRankingsIntermediateRewardEventPayload {
+    fn event_type(&self) -> MicroserviceEvent {
+        MicroserviceEvent::LegendRankingsIntermediateReward
     }
 }
