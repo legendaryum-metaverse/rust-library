@@ -51,6 +51,62 @@ impl RabbitMQClient {
 
         Ok(())
     }
+
+    /// Publishes audit events to the direct audit exchange
+    /// Uses the event type as routing key for flexible audit event routing
+    pub async fn publish_audit_event<T: PayloadEvent + Serialize>(
+        payload: T,
+    ) -> Result<(), RabbitMQError> {
+        let channel_arc = get_or_init_publish_channel().await?;
+        let channel = channel_arc.lock().await;
+
+        // Declare audit exchange if it doesn't exist
+        channel
+            .exchange_declare(
+                Exchange::AUDIT,
+                ExchangeKind::Direct,
+                ExchangeDeclareOptions {
+                    durable: true,
+                    ..Default::default()
+                },
+                FieldTable::default(),
+            )
+            .await?;
+
+        // Use the event type as routing key for flexible audit event routing
+        let event_type = payload.event_type();
+        let routing_key = event_type.as_ref(); // "audit.received", "audit.processed", or "audit.dead_letter"
+
+        let body = serde_json::to_vec(&payload)?;
+
+        channel
+            .basic_publish(
+                Exchange::AUDIT,
+                routing_key, // Routes to appropriate queue based on event type
+                BasicPublishOptions::default(),
+                &body,
+                BasicProperties::default()
+                    .with_content_type("application/json".into())
+                    .with_delivery_mode(2), // persistent
+            )
+            .await?;
+
+        Ok(())
+    }
+
+    /// Publishes audit.received events - convenience wrapper
+    pub async fn publish_audit_received_event<T: PayloadEvent + Serialize>(
+        payload: T,
+    ) -> Result<(), RabbitMQError> {
+        Self::publish_audit_event(payload).await
+    }
+
+    /// Publishes audit.dead_letter events - convenience wrapper
+    pub async fn publish_audit_dead_letter_event<T: PayloadEvent + Serialize>(
+        payload: T,
+    ) -> Result<(), RabbitMQError> {
+        Self::publish_audit_event(payload).await
+    }
 }
 
 /// Integration test, the micro publishes an event and the "same" microservice client listens to it
@@ -62,7 +118,7 @@ mod test_publish_event {
     use std::sync::Arc;
     use std::sync::atomic::AtomicUsize;
     use tokio::sync::Barrier;
-    
+
     use crate::connection::AvailableMicroservices::Auth;
     use crate::connection::RabbitMQClient;
 
@@ -164,6 +220,8 @@ mod test_publish_event {
             // tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
 
             // Simulate a connection drop while consuming and later publishing an event
+            // Step 3: Simulate a connection drop while consuming, topology is erased, so we saved it for later deletion.
+            let t = setup.get_current_topology().await;
             {
                 let conn = setup.client.current_connection().await.expect("No connection found").write().await;
                 conn.close(0, "Test disconnect")
@@ -185,6 +243,8 @@ mod test_publish_event {
 
 
             last_barrier_clone.wait().await;
+            // we must manually delete the before-topology because in "drop" we delete the "after-topology"
+            setup.clean_topology(Some(t)).await;
         });
     }
 }

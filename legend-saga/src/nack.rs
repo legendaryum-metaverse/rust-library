@@ -9,7 +9,7 @@ use std::time::Duration;
 use tracing::info;
 use crate::connection::RabbitMQError;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub(crate) struct Nack {
     channel: Channel,
     delivery: MyDelivery,

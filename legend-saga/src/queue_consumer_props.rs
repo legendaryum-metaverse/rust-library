@@ -6,6 +6,12 @@ impl Queue {
     pub const REPLY_TO_SAGA: &'static str = "reply_to_saga";
     /// Queue used for commencing a saga.
     pub const COMMENCE_SAGA: &'static str = "commence_saga";
+    /// Queue for audit.received events
+    pub const AUDIT_RECEIVED_COMMANDS: &'static str = "audit_received_commands";
+    /// Queue for audit.processed events
+    pub const AUDIT_PROCESSED_COMMANDS: &'static str = "audit_processed_commands";
+    /// Queue for audit.dead_letter events
+    pub const AUDIT_DEAD_LETTER_COMMANDS: &'static str = "audit_dead_letter_commands";
 }
 
 /// Represents the names of exchanges, which act as message routing hubs in the RabbitMQ context.
@@ -20,6 +26,8 @@ impl Exchange {
     pub const MATCHING: &'static str = "matching_exchange";
     /// Exchange dedicated to requeueing messages that require further processing.
     pub const MATCHING_REQUEUE: &'static str = "matching_requeue_exchange";
+    /// Exchange for audit events (audit.received, audit.processed, audit.dead_letter)
+    pub const AUDIT: &'static str = "audit_exchange";
 }
 
 /// Represents the names of specific message queues in the RabbitMQ context.

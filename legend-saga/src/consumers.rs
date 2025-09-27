@@ -307,6 +307,97 @@ impl RabbitMQClient {
 
         Ok(())
     }
+
+    /// Creates audit logging infrastructure with direct exchange and separate queues
+    /// Uses direct exchange for efficient single-consumer delivery to audit microservice
+    pub(crate) async fn create_audit_logging_resources(&self) -> Result<(), lapin::Error> {
+        let channel = self.events_channel.lock().await;
+
+        // Create direct exchange for audit events
+        channel
+            .exchange_declare(
+                Exchange::AUDIT,
+                ExchangeKind::Direct,
+                ExchangeDeclareOptions {
+                    durable: true,
+                    ..Default::default()
+                },
+                FieldTable::default(),
+            )
+            .await?;
+
+        // Create separate queue for audit.received events
+        let audit_received_queue = "audit_received_commands";
+        channel
+            .queue_declare(
+                audit_received_queue,
+                QueueDeclareOptions {
+                    durable: true,
+                    ..Default::default()
+                },
+                FieldTable::default(),
+            )
+            .await?;
+
+        // Create separate queue for audit.processed events
+        let audit_processed_queue = "audit_processed_commands";
+        channel
+            .queue_declare(
+                audit_processed_queue,
+                QueueDeclareOptions {
+                    durable: true,
+                    ..Default::default()
+                },
+                FieldTable::default(),
+            )
+            .await?;
+
+        // Create separate queue for audit.dead_letter events
+        let audit_dead_letter_queue = "audit_dead_letter_commands";
+        channel
+            .queue_declare(
+                audit_dead_letter_queue,
+                QueueDeclareOptions {
+                    durable: true,
+                    ..Default::default()
+                },
+                FieldTable::default(),
+            )
+            .await?;
+
+        // Bind each queue to its specific routing key
+        channel
+            .queue_bind(
+                audit_received_queue,
+                Exchange::AUDIT,
+                "audit.received",
+                QueueBindOptions::default(),
+                FieldTable::default(),
+            )
+            .await?;
+
+        channel
+            .queue_bind(
+                audit_processed_queue,
+                Exchange::AUDIT,
+                "audit.processed",
+                QueueBindOptions::default(),
+                FieldTable::default(),
+            )
+            .await?;
+
+        channel
+            .queue_bind(
+                audit_dead_letter_queue,
+                Exchange::AUDIT,
+                "audit.dead_letter",
+                QueueBindOptions::default(),
+                FieldTable::default(),
+            )
+            .await?;
+
+        Ok(())
+    }
 }
 
 #[cfg(test)]
