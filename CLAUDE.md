@@ -7,6 +7,7 @@
 **Legend-saga** is a robust Rust library designed for microservice communication via RabbitMQ, implementing sophisticated event-driven patterns with reliable messaging capabilities. The library has evolved to production-ready status with comprehensive audit logging capabilities.
 
 ### Core Components
+
 - 🔄 **Event-Driven Architecture**: Publish/subscribe messaging with headers-based routing
 - 🎯 **Saga Pattern Implementation**: Orchestration and compensation patterns for distributed transactions
 - 📊 **Comprehensive Audit System**: Real-time tracking of event lifecycle (received, processed, dead-letter)
@@ -14,6 +15,7 @@
 - 🧪 **Production-Grade Testing**: Extensive test suite with containerized infrastructure
 
 ### Current Status: ✅ Production Ready
+
 - **Version**: 0.0.37
 - **Test Coverage**: 33 passing tests (100% when run via `make test`)
 - **⚠️ Testing Requirement**: Individual tests MUST use `--test-threads=1` for RabbitMQ container compatibility
@@ -25,12 +27,14 @@
 ## 🔄 Recent Changes (vs main)
 
 ### 🆕 Major Additions
+
 - **Audit Event Types**: Added `AuditReceived`, `AuditProcessed`, `AuditDeadLetter` events
 - **AuditHandler**: New specialized handler preventing recursive audit emissions
 - **Direct Exchange Pattern**: Efficient single-consumer delivery for audit events
 - **Automatic Audit Emission**: Integrated into EventHandler lifecycle (ack/nack operations)
 
 ### 📁 Modified Files
+
 ```
 legend-saga/src/
 ├── connection.rs      # Added audit emitter management
@@ -45,6 +49,7 @@ legend-saga/src/
 ```
 
 ### 🧪 Test Enhancements
+
 - **Audit Consumer Tests**: Full lifecycle testing with proper synchronization
 - **Real Flow Tests**: End-to-end validation with TestImage → AuditEda flows
 - **Dead Letter Testing**: Verification of both delay and fibonacci strategies
@@ -55,21 +60,24 @@ legend-saga/src/
 ## 🏗️ Codebase Analysis
 
 ### ✅ Strengths
-| Aspect | Quality | Notes |
-|--------|---------|-------|
-| **Architecture** | ⭐⭐⭐⭐⭐ | Clean separation of concerns, modular design |
-| **Error Handling** | ⭐⭐⭐⭐⭐ | Comprehensive `RabbitMQError` with proper propagation |
-| **Concurrency** | ⭐⭐⭐⭐⭐ | Safe async patterns with Arc/Mutex for shared state |
-| **Test Coverage** | ⭐⭐⭐⭐⭐ | 33 tests covering edge cases and integration scenarios |
-| **Documentation** | ⭐⭐⭐⭐ | Inline docs present, could benefit from more examples |
+
+| Aspect             | Quality    | Notes                                                  |
+| ------------------ | ---------- | ------------------------------------------------------ |
+| **Architecture**   | ⭐⭐⭐⭐⭐ | Clean separation of concerns, modular design           |
+| **Error Handling** | ⭐⭐⭐⭐⭐ | Comprehensive `RabbitMQError` with proper propagation  |
+| **Concurrency**    | ⭐⭐⭐⭐⭐ | Safe async patterns with Arc/Mutex for shared state    |
+| **Test Coverage**  | ⭐⭐⭐⭐⭐ | 33 tests covering edge cases and integration scenarios |
+| **Documentation**  | ⭐⭐⭐⭐   | Inline docs present, could benefit from more examples  |
 
 ### 🔍 Key Metrics
+
 - **Lines of Code**: ~4,615 lines across 15 modules
 - **Dependencies**: Well-curated with optional features (events, std)
 - **Performance**: Async-first with efficient connection pooling
 - **Security**: No credential exposure, secure RabbitMQ patterns
 
 ### ⚠️ Areas for Improvement
+
 1. **Payload Logging**: Audit events currently don't capture original payloads
 2. **Error Resilience**: Audit failures could be more gracefully handled
 3. **Configuration**: Hard-coded values could be made configurable
@@ -79,6 +87,7 @@ legend-saga/src/
 ## 🔍 Audit Log Deep Dive
 
 ### 🌊 Event Flow Diagram
+
 ```mermaid
 graph TD
     A[Event Published] --> B[Event Received]
@@ -100,6 +109,7 @@ graph TD
 ```
 
 ### 🎯 Integration Points
+
 1. **Event Reception**: `events_consume.rs:370` - Auto-emit audit.received
 2. **Event Acknowledgment**: `events_consume.rs:41` - Auto-emit audit.processed
 3. **Event Rejection**: `events_consume.rs:73` - Auto-emit audit.dead_letter
@@ -109,6 +119,7 @@ graph TD
 ### 🎯 Quick Wins Identified
 
 #### 1. 📦 Add Payload Serialization (Low Effort)
+
 ```rust
 // Current audit payload
 pub struct AuditProcessedPayload {
@@ -118,9 +129,11 @@ pub struct AuditProcessedPayload {
     pub original_payload: Option<serde_json::Value>,
 }
 ```
+
 **Effort**: 2-3 hours | **Impact**: High visibility into processed data
 
 #### 2. 🛡️ Non-Blocking Audit Emission (Low Effort)
+
 ```rust
 // Enhanced error handling in EventHandler::ack()
 if let Err(e) = RabbitMQClient::publish_audit_event(audit_payload).await {
@@ -128,9 +141,11 @@ if let Err(e) = RabbitMQClient::publish_audit_event(audit_payload).await {
     tracing::warn!("Audit emission failed: {:?}", e);
 }
 ```
+
 **Effort**: 1 hour | **Impact**: Improved system resilience
 
 #### 3. ⚙️ Configurable Audit Settings (Medium Effort)
+
 ```rust
 pub struct AuditConfig {
     pub enabled: bool,
@@ -138,6 +153,7 @@ pub struct AuditConfig {
     pub max_payload_size: usize,
 }
 ```
+
 **Effort**: 4-6 hours | **Impact**: Production flexibility
 
 ---
@@ -145,28 +161,34 @@ pub struct AuditConfig {
 ## 🗺️ Future Roadmap
 
 ### 🔥 High Priority
+
 1. **Payload Inclusion**: Implement optional payload serialization in audit events
-   - *Effort*: Low (2-3 hours)
-   - *Impact*: Enhanced audit trail visibility
+
+   - _Effort_: Low (2-3 hours)
+   - _Impact_: Enhanced audit trail visibility
 
 2. **Audit Configuration**: Make audit behavior configurable per microservice
-   - *Effort*: Medium (4-6 hours)
-   - *Impact*: Production deployment flexibility
+
+   - _Effort_: Medium (4-6 hours)
+   - _Impact_: Production deployment flexibility
 
 3. **Performance Metrics**: Add audit processing latency tracking
-   - *Effort*: Medium (3-4 hours)
-   - *Impact*: Operational insights
+   - _Effort_: Medium (3-4 hours)
+   - _Impact_: Operational insights
 
 ### 🔄 Medium Priority
+
 4. **Batch Audit Emission**: Group multiple audit events for efficiency
-   - *Effort*: High (8-10 hours)
-   - *Impact*: Reduced network overhead
+
+   - _Effort_: High (8-10 hours)
+   - _Impact_: Reduced network overhead
 
 5. **Audit Persistence**: Add database storage option for audit events
-   - *Effort*: High (12-16 hours)
-   - *Impact*: Long-term audit retention
+   - _Effort_: High (12-16 hours)
+   - _Impact_: Long-term audit retention
 
 ### 🔮 Long Term
+
 6. **Audit Analytics**: Dashboard and reporting capabilities
 7. **Event Replay**: Ability to replay events from audit trail
 8. **Compliance Features**: GDPR, SOX compliance enhancements
@@ -176,30 +198,34 @@ pub struct AuditConfig {
 ## 🎯 Session Guidelines
 
 ### 🚀 Getting Started
+
 ```bash
 # Standard development workflow
-make format          # Format code
-make lint           # Check for issues
-make test           # Run full test suite (includes container setup)
-make all           # Run everything
+make format # Format code
+make lint   # Check for issues
+make test   # Run full test suite (includes container setup)
+make all    # Run everything
 
 # Individual test debugging (CRITICAL: use --test-threads=1)
 LOG_LEVEL=info cargo test --lib test_name -- --test-threads=1 --nocapture --color always
 ```
 
 ### 🐛 Debugging Tips
+
 - **Test Failures**: Always use `make test` (handles Docker containers)
 - **⚠️ CRITICAL**: Individual tests MUST use `--test-threads=1` for RabbitMQ containers
 - **Audit Issues**: Check `LOG_LEVEL=info` output for detailed flow
 - **Connection Problems**: Verify RabbitMQ containers are running
 
 ### 💡 Feature Development
+
 1. **New Events**: Add to `MicroserviceEvent` enum + payload struct
 2. **New Microservices**: Update `AvailableMicroservices` enum
 3. **Test Integration**: Use `TestSetup` with proper audit configuration
 4. **Branch Comparison**: Use `git diff main` to see audit-related changes
 
 ### 🔍 Code Review Checklist
+
 - [ ] Audit events properly emitted for new event types
 - [ ] Tests include audit flow validation
 - [ ] No recursive audit emissions (use `AuditHandler`)
@@ -207,17 +233,19 @@ LOG_LEVEL=info cargo test --lib test_name -- --test-threads=1 --nocapture --colo
 - [ ] Performance impact assessed for high-volume events
 
 ### 📚 Key Files to Know
-| File | Purpose | When to Modify |
-|------|---------|----------------|
-| `events.rs` | Event definitions | Adding new events/payloads |
-| `events_consume.rs` | Core event handling | Changing event processing logic |
-| `start.rs` | Connection management | Adding new microservice types |
-| `consumers.rs` | RabbitMQ infrastructure | Queue/exchange modifications |
-| `test.rs` | Test utilities | Enhancing test capabilities |
+
+| File                | Purpose                 | When to Modify                  |
+| ------------------- | ----------------------- | ------------------------------- |
+| `events.rs`         | Event definitions       | Adding new events/payloads      |
+| `events_consume.rs` | Core event handling     | Changing event processing logic |
+| `start.rs`          | Connection management   | Adding new microservice types   |
+| `consumers.rs`      | RabbitMQ infrastructure | Queue/exchange modifications    |
+| `test.rs`           | Test utilities          | Enhancing test capabilities     |
 
 ---
 
 **📞 Need Help?** This codebase is well-structured and extensively tested. When in doubt:
+
 1. Check existing patterns in similar modules
 2. Run tests early and often with `make test`
 3. Use audit logs to trace event flows
