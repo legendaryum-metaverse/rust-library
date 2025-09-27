@@ -4,7 +4,7 @@ use crate::nack::Nack;
 use crate::queue_consumer_props::Queue;
 use futures_lite::StreamExt;
 use lapin::options::{
-    BasicAckOptions, BasicConsumeOptions, BasicNackOptions, BasicQosOptions,
+    BasicAckOptions, BasicConsumeOptions, BasicNackOptions,
 };
 use lapin::types::FieldTable;
 use lapin::Channel;
@@ -155,7 +155,6 @@ impl RabbitMQClient {
         emitter: Emitter<CommandHandler, StepCommand>,
     ) -> Result<(), RabbitMQError> {
         let channel = self.saga_channel.lock().await;
-        channel.basic_qos(1, BasicQosOptions::default()).await?;
 
         let mut consumer = channel
             .basic_consume(

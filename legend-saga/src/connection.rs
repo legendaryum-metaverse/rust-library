@@ -9,7 +9,7 @@ use tracing::{debug, error, info, warn};
 use crate::events::MicroserviceEvent;
 use backoff::{Error as BackoffError, ExponentialBackoff};
 use once_cell::sync::OnceCell;
-use crate::start::{EventEmitter, SagaEmitter};
+use crate::start::{AuditEmitter, EventEmitter, SagaEmitter};
 
 #[derive(Debug, Clone, PartialEq, Eq, EnumString, AsRefStr, EnumIter, Serialize, Deserialize)]
 #[strum(serialize_all = "kebab-case")]
@@ -31,6 +31,7 @@ pub enum AvailableMicroservices {
     Social,
     SocialMediaRooms,
     Storage,
+    AuditEda,
 }
 
 #[derive(Error, Debug)]
@@ -79,6 +80,7 @@ pub struct RabbitMQClient {
     pub(crate) saga_queue_name: String,
     pub(crate) event_emitter:  Arc<Mutex<Option<EventEmitter>>>,
     pub(crate) saga_emitter: Arc<Mutex<Option<SagaEmitter>>>,
+    pub(crate) audit_emitter: Arc<Mutex<Option<AuditEmitter>>>,
     reconnecting: Arc<Mutex<bool>>,
 }
 
@@ -90,6 +92,7 @@ impl Clone for RabbitMQClient {
             saga_queue_name: self.saga_queue_name.clone(),
             event_emitter: self.event_emitter.clone(),
             saga_emitter: self.saga_emitter.clone(),
+            audit_emitter: self.audit_emitter.clone(),
             microservice: self.microservice.clone(),
             events_channel: Arc::clone(&self.events_channel),
             saga_channel: Arc::clone(&self.saga_channel),
@@ -159,6 +162,7 @@ impl RabbitMQClient {
             // the emitters are set later
             event_emitter:  Arc::new(Mutex::new(None)),
             saga_emitter:  Arc::new(Mutex::new(None)),
+            audit_emitter: Arc::new(Mutex::new(None)),
             events: events.unwrap_or(&[]),
             events_channel: Arc::new(Mutex::new(events_channel)),
             saga_channel: Arc::new(Mutex::new(saga_channel)),
@@ -691,7 +695,8 @@ mod tests {
                 .await
                 .expect("Failed to create consumer");
 
-            // Step 3: Simulate a connection drop while consuming, topology is erased
+            // Step 3: Simulate a connection drop while consuming, topology is erased, so we saved it to delete it later
+            let t = setup.get_current_topology().await;
             {
                 let conn = setup.client.current_connection().await.expect("No connection found").write().await;
                 warn!("TOPOLOGY BEFORE CLOSING ARE GOING TO BE DELETED {:?}",conn.topology());
@@ -707,9 +712,6 @@ mod tests {
                 .await
                 .expect("Reconnection should succeed");
 
-            let conn = setup.client.current_connection().await.expect("No connection found").write().await;
-            info!("TOPOLOGY AFTER CLOSING SHOULD BE EMPTY {:?}",conn.topology());
-
             // Step 5: Ensure the remaining message can still be consumed
             let received_message = tokio::time::timeout(Duration::from_secs(5), consumer.next())
                 .await
@@ -721,6 +723,8 @@ mod tests {
                 received_message, message,
                 "Received message should match expected message"
             );
+            // we must manually delete the before-topology because in "drop" we delete the "after-topology"
+            setup.clean_topology(Some(t)).await;
         });
     }
 

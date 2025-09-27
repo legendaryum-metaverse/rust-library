@@ -11,6 +11,15 @@ pub enum MicroserviceEvent {
     TestImage,
     #[strum(serialize = "test.mint")]
     TestMint,
+    /// Emitted when an event is received by a microservice before processing starts (audit tracking)
+    #[strum(serialize = "audit.received")]
+    AuditReceived,
+    /// Emitted when an event is successfully processed by a microservice for audit tracking
+    #[strum(serialize = "audit.processed")]
+    AuditProcessed,
+    /// Emitted when a message is rejected/nacked and sent to dead letter queue
+    #[strum(serialize = "audit.dead_letter")]
+    AuditDeadLetter,
     #[strum(serialize = "auth.deleted_user")]
     AuthDeletedUser,
     #[strum(serialize = "auth.logout_user")]
@@ -638,5 +647,73 @@ pub struct LegendRankingsIntermediateRewardEventPayload {
 impl PayloadEvent for LegendRankingsIntermediateRewardEventPayload {
     fn event_type(&self) -> MicroserviceEvent {
         MicroserviceEvent::LegendRankingsIntermediateReward
+    }
+}
+
+// ********** AUDIT ************** //
+/// Payload for audit.received event - tracks when event is received before processing
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct AuditReceivedPayload {
+    /// The microservice that received the event
+    pub microservice: String,
+    /// The event that was received
+    pub received_event: String,
+    /// Timestamp when the event was received (UNIX timestamp)
+    pub received_at: String,
+    /// The queue name from which the event was consumed
+    pub queue_name: String,
+    /// Optional event identifier for tracking
+    pub event_id: Option<String>,
+}
+
+impl PayloadEvent for AuditReceivedPayload {
+    fn event_type(&self) -> MicroserviceEvent {
+        MicroserviceEvent::AuditReceived
+    }
+}
+
+/// Payload for audit.processed event - tracks successful event processing
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct AuditProcessedPayload {
+    /// The microservice that processed the event
+    pub microservice: String,
+    /// The original event that was processed
+    pub processed_event: String,
+    /// Timestamp when the event was processed (ISO 8601)
+    pub processed_at: String,
+    /// The queue name where the event was consumed
+    pub queue_name: String,
+    /// Optional event identifier for tracking
+    pub event_id: Option<String>,
+}
+
+impl PayloadEvent for AuditProcessedPayload {
+    fn event_type(&self) -> MicroserviceEvent {
+        MicroserviceEvent::AuditProcessed
+    }
+}
+
+/// Payload for audit.dead_letter event - tracks when message is rejected/nacked
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct AuditDeadLetterPayload {
+    /// The microservice that rejected the event
+    pub microservice: String,
+    /// The original event that was rejected
+    pub rejected_event: String,
+    /// Timestamp when the event was rejected (ISO 8601)
+    pub rejected_at: String,
+    /// The queue name where the event was rejected from
+    pub queue_name: String,
+    /// Reason for rejection (delay, fibonacci_strategy, etc.)
+    pub rejection_reason: String,
+    /// Optional retry count
+    pub retry_count: Option<u32>,
+    /// Optional event identifier for tracking
+    pub event_id: Option<String>,
+}
+
+impl PayloadEvent for AuditDeadLetterPayload {
+    fn event_type(&self) -> MicroserviceEvent {
+        MicroserviceEvent::AuditDeadLetter
     }
 }

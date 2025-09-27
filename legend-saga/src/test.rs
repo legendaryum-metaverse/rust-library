@@ -35,6 +35,7 @@ pub(crate) mod setup {
     };
 
     use crate::connection::{AvailableMicroservices, RabbitMQClient, RabbitMQError};
+    use lapin::topology::TopologyDefinition;
     use lapin::types::FieldTable;
     use lapin::BasicProperties;
     use rand::distr::StandardUniform;
@@ -94,7 +95,7 @@ pub(crate) mod setup {
 
         #[cfg(test)]
         #[allow(dead_code)]
-        async fn delete_queue(&self, queue_name: &str) -> Result<(), RabbitMQError> {
+        pub(crate) async fn delete_queue(&self, queue_name: &str) -> Result<(), RabbitMQError> {
             let channel = self.events_channel.lock().await;
             channel
                 .queue_delete(queue_name, QueueDeleteOptions::default())
@@ -153,7 +154,8 @@ pub(crate) mod setup {
     }
 
     pub fn random_microservice() -> AvailableMicroservices {
-        rand::rng().random()
+        let mut rng = rand::rng();
+        rng.random()
     }
 
     impl TestSetup {
@@ -170,43 +172,103 @@ pub(crate) mod setup {
             });
             TestSetup { rt, client }
         }
+
+        pub(crate) async fn get_current_topology(&self) -> TopologyDefinition {
+            self.client
+                .current_connection()
+                .await
+                .expect("Cannot get the connection")
+                .read()
+                .await
+                .topology()
+        }
+        /// Asynchronously cleans up the RabbitMQ topology.
+        ///
+        /// This function is used to clean the RabbitMQ topology (queues and exchanges) by deleting all
+        /// the declared entities in the provided or current topology. If no topology is provided,
+        /// the function will retrieve and use the current topology from the active connection.
+        ///
+        /// # Parameters
+        /// - `t`: An `Option<TopologyDefinition>` representing the topology to clean.
+        ///        If `None`, the current connection's topology is used.
+        ///
+        /// # Functionality
+        /// 1. Retrieves the current connection from the client. If the connection is not established,
+        ///    it produces an error as it is assumed to always exist (`unreachable!`).
+        /// 2. Creates a channel using the current connection to perform cleanup operations.
+        /// 3. Deletes all queues defined in the topology:
+        ///    - Logs the deletion for each queue.
+        ///    - Deletes the queue using `queue_delete()`.
+        /// 4. Deletes all exchanges defined in the topology:
+        ///    - Logs the deletion for each exchange.
+        ///    - Deletes the exchange using `exchange_delete()`.
+        /// 5. Ensures the cleanup channel (`delete_channel`) is properly closed after processing, while
+        ///    logging any errors that occur during the channel closure process.
+        ///
+        /// # Logging
+        /// - Logs the name of each queue and exchange being deleted.
+        /// - Logs any errors encountered while closing the `delete_channel`.
+        ///
+        /// # Errors
+        /// - Panics if the connection cannot be retrieved or if any unexpected failure occurs during
+        ///   channel creation or deleting entities.
+        /// - Any failure in closing the `delete_channel` is logged but does not cause a panic.
+        ///
+        /// # Example Usage
+        /// ```rust
+        /// // Assuming `client` is an instance of RabbitMQClient
+        /// let topology_definition = Some(some_topology_definition);
+        /// client.clean_topology(topology_definition).await;
+        /// ```
+        ///
+        /// # Notes & Assumptions
+        /// - It is assumed that the active connection is available when this function is called, as
+        ///   guaranteed by `RabbitMQClient::get_connection`.
+        /// - The `topology` parameter is optional; if not provided, the current connection's topology will
+        ///   be used.
+        pub(crate) async fn clean_topology(&self, t: Option<TopologyDefinition>) {
+            let conn = self
+                .client
+                .current_connection()
+                .await
+                .expect("Cannot get the connection")
+                .read()
+                .await;
+            if !conn.status().connected() {
+                unreachable!("Connection is always guaranteed in `RabbitMQClient::get_connection`");
+            }
+            let delete_channel = conn.create_channel().await.unwrap();
+            let t = t.unwrap_or_else(|| conn.topology());
+            for queue in t.queues {
+                debug!("DELETING QUEUE: {}", queue.name.to_string());
+                delete_channel
+                    .queue_delete(&queue.name.to_string(), QueueDeleteOptions::default())
+                    .await
+                    .unwrap();
+            }
+
+            // Delete all Exchanges
+            for exchange in t.exchanges {
+                debug!("DELETING EXCHANGE: {}", exchange.name.to_string());
+                delete_channel
+                    .exchange_delete(&exchange.name.to_string(), Default::default())
+                    .await
+                    .unwrap();
+            }
+            // Properly close the delete_channel before returning
+            if let Err(e) = delete_channel.close(0, "Topology cleanup complete").await {
+                debug!("Error closing delete_channel: {:?}", e);
+                // Don't panic here as it might already be closing
+            }
+            debug!("RESTORED TOPOLOGY");
+        }
     }
 
     // Rust's RAII (Resource Acquisition Is Initialization) pattern -> TestSetup instance goes out of scope at the end of each test.
     impl Drop for TestSetup {
         fn drop(&mut self) {
             self.rt.block_on(async {
-                let conn = self
-                    .client
-                    .current_connection()
-                    .await
-                    .expect("Cannot get the connection")
-                    .read()
-                    .await;
-                if !conn.status().connected() {
-                    unreachable!(
-                        "Connection is always guaranteed in `RabbitMQClient::get_connection`"
-                    );
-                }
-                let delete_channel = conn.create_channel().await.unwrap();
-                let t = conn.topology();
-                for queue in t.queues {
-                    debug!("DELETING QUEUE: {}", queue.name.to_string());
-                    delete_channel
-                        .queue_delete(&queue.name.to_string(), QueueDeleteOptions::default())
-                        .await
-                        .unwrap();
-                }
-
-                // delete all exchanges
-                for exchange in t.exchanges {
-                    debug!("DELETING EXCHANGE: {}", exchange.name.to_string());
-                    delete_channel
-                        .exchange_delete(&exchange.name.to_string(), Default::default())
-                        .await
-                        .unwrap();
-                }
-                debug!("RESTORED TOPOLOGY");
+                self.clean_topology(None).await;
             });
         }
     }
