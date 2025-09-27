@@ -18,7 +18,7 @@ use strum::IntoEnumIterator;
 use tracing::{error, info};
 use crate::connection::{RabbitMQClient, RabbitMQError};
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct EventHandler {
     payload: HashMap<String, Value>,
     channel: EventsConsumeChannel,
@@ -54,6 +54,7 @@ impl EventHandler {
             processed_event: self.processed_event.clone(),
             processed_at: timestamp,
             queue_name: self.channel.queue_name.clone(),
+            // TODO: important implementation
             event_id: None,
         };
 
@@ -123,6 +124,7 @@ impl EventHandler {
             queue_name: self.channel.queue_name.clone(),
             rejection_reason: "fibonacci_strategy".to_string(),
             retry_count: Some(result.0 as u32),
+            // TODO: future implementation
             event_id: None,
         };
 
@@ -390,7 +392,7 @@ impl RabbitMQClient {
 
 /// AuditHandler - specialized handler for audit events that doesn't emit recursive audits
 /// This prevents the audit microservice from auditing its own audit processing
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct AuditHandler {
     payload: HashMap<String, Value>,
     channel: EventsConsumeChannel,
@@ -442,7 +444,7 @@ impl AuditHandler {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 struct EventsConsumeChannel {
     channel: Channel,
     delivery: MyDelivery,

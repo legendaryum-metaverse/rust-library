@@ -1,5 +1,5 @@
 use crate::events::MicroserviceEvent;
-use crate::queue_consumer_props::{Exchange, QueueConsumerProps};
+use crate::queue_consumer_props::{Exchange, Queue, QueueConsumerProps};
 use lapin::options::ExchangeBindOptions;
 use lapin::types::AMQPValue;
 use lapin::{
@@ -327,10 +327,9 @@ impl RabbitMQClient {
             .await?;
 
         // Create separate queue for audit.received events
-        let audit_received_queue = "audit_received_commands";
         channel
             .queue_declare(
-                audit_received_queue,
+                Queue::AUDIT_RECEIVED_COMMANDS,
                 QueueDeclareOptions {
                     durable: true,
                     ..Default::default()
@@ -340,10 +339,9 @@ impl RabbitMQClient {
             .await?;
 
         // Create separate queue for audit.processed events
-        let audit_processed_queue = "audit_processed_commands";
         channel
             .queue_declare(
-                audit_processed_queue,
+                Queue::AUDIT_PROCESSED_COMMANDS,
                 QueueDeclareOptions {
                     durable: true,
                     ..Default::default()
@@ -353,10 +351,9 @@ impl RabbitMQClient {
             .await?;
 
         // Create separate queue for audit.dead_letter events
-        let audit_dead_letter_queue = "audit_dead_letter_commands";
         channel
             .queue_declare(
-                audit_dead_letter_queue,
+                Queue::AUDIT_DEAD_LETTER_COMMANDS,
                 QueueDeclareOptions {
                     durable: true,
                     ..Default::default()
@@ -368,7 +365,7 @@ impl RabbitMQClient {
         // Bind each queue to its specific routing key
         channel
             .queue_bind(
-                audit_received_queue,
+                Queue::AUDIT_RECEIVED_COMMANDS,
                 Exchange::AUDIT,
                 "audit.received",
                 QueueBindOptions::default(),
@@ -378,7 +375,7 @@ impl RabbitMQClient {
 
         channel
             .queue_bind(
-                audit_processed_queue,
+                Queue::AUDIT_PROCESSED_COMMANDS,
                 Exchange::AUDIT,
                 "audit.processed",
                 QueueBindOptions::default(),
@@ -388,7 +385,7 @@ impl RabbitMQClient {
 
         channel
             .queue_bind(
-                audit_dead_letter_queue,
+                Queue::AUDIT_DEAD_LETTER_COMMANDS,
                 Exchange::AUDIT,
                 "audit.dead_letter",
                 QueueBindOptions::default(),
