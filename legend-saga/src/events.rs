@@ -659,7 +659,7 @@ pub struct AuditReceivedPayload {
     /// The event that was received
     pub received_event: String,
     /// Timestamp when the event was received (UNIX timestamp)
-    pub received_at: String,
+    pub received_at: u64,
     /// The queue name from which the event was consumed
     pub queue_name: String,
     /// Optional event identifier for tracking
@@ -679,8 +679,8 @@ pub struct AuditProcessedPayload {
     pub microservice: String,
     /// The original event that was processed
     pub processed_event: String,
-    /// Timestamp when the event was processed (ISO 8601)
-    pub processed_at: String,
+    /// Timestamp when the event was processed (UNIX timestamp)
+    pub processed_at: u64,
     /// The queue name where the event was consumed
     pub queue_name: String,
     /// Optional event identifier for tracking
@@ -700,8 +700,8 @@ pub struct AuditDeadLetterPayload {
     pub microservice: String,
     /// The original event that was rejected
     pub rejected_event: String,
-    /// Timestamp when the event was rejected (ISO 8601)
-    pub rejected_at: String,
+    /// Timestamp when the event was rejected (UNIX timestamp)
+    pub rejected_at: u64,
     /// The queue name where the event was rejected from
     pub queue_name: String,
     /// Reason for rejection (delay, fibonacci_strategy, etc.)

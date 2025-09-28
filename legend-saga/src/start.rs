@@ -143,6 +143,7 @@ mod test_audit_consumer {
     use crate::test::setup::{Config, TestSetup};
     use std::sync::atomic::AtomicUsize;
     use std::sync::Arc;
+    use std::time::{SystemTime, UNIX_EPOCH};
     use tokio::sync::Barrier;
 
     #[test]
@@ -201,11 +202,16 @@ mod test_audit_consumer {
                 })
                 .await;
 
+            let now_unix =  SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_secs();
+
             // Create and publish an audit event manually to test the flow
             let test_audit_payload = AuditProcessedPayload {
                 microservice: "auth".to_string(),
                 processed_event: "auth.new_sign_up".to_string(),
-                processed_at: "1703123456".to_string(),
+                processed_at: now_unix,
                 queue_name: "auth_match_commands".to_string(),
                 event_id: None,
             };
