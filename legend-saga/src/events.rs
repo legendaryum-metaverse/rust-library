@@ -679,7 +679,7 @@ pub struct AuditProcessedPayload {
     pub microservice: String,
     /// The original event that was processed
     pub processed_event: String,
-    /// Timestamp when the event was processed (ISO 8601)
+    /// Timestamp when the event was processed (UNIX timestamp)
     pub processed_at: u64,
     /// The queue name where the event was consumed
     pub queue_name: String,
@@ -700,7 +700,7 @@ pub struct AuditDeadLetterPayload {
     pub microservice: String,
     /// The original event that was rejected
     pub rejected_event: String,
-    /// Timestamp when the event was rejected (ISO 8601)
+    /// Timestamp when the event was rejected (UNIX timestamp)
     pub rejected_at: u64,
     /// The queue name where the event was rejected from
     pub queue_name: String,
