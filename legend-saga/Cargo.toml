@@ -1,6 +1,6 @@
 [package]
 name = "legend-saga"
-version = "0.0.39"
+version = "0.0.40"
 edition = "2021"
 description = "A Rust library for working with RabbitMQ and asynchronous operations"
 authors = ["Jorge Clavijo <jym272@gmail.com>"]
