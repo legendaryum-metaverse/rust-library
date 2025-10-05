@@ -1,8 +1,8 @@
 use crate::events::PayloadEvent;
 use crate::queue_consumer_props::Exchange;
 use lapin::{
-    options::BasicPublishOptions, options::ExchangeDeclareOptions, types::AMQPValue,
-    types::FieldTable, BasicProperties, ExchangeKind,
+    options::BasicPublishOptions, types::AMQPValue,
+    types::FieldTable, BasicProperties,
 };
 use serde::Serialize;
 use crate::connection::{get_or_init_publish_channel, RabbitMQClient, RabbitMQError};
@@ -21,18 +21,6 @@ impl RabbitMQClient {
             AMQPValue::LongString(event_type.as_ref().into()),
         );
         header_event.insert("all-micro".into(), AMQPValue::LongString("yes".into()));
-
-        channel
-            .exchange_declare(
-                Exchange::MATCHING,
-                ExchangeKind::Headers,
-                ExchangeDeclareOptions {
-                    durable: true,
-                    ..ExchangeDeclareOptions::default()
-                },
-                FieldTable::default(),
-            )
-            .await?;
 
         let body = serde_json::to_vec(&payload)?;
 
@@ -59,19 +47,6 @@ impl RabbitMQClient {
     ) -> Result<(), RabbitMQError> {
         let channel_arc = get_or_init_publish_channel().await?;
         let channel = channel_arc.lock().await;
-
-        // Declare audit exchange if it doesn't exist
-        channel
-            .exchange_declare(
-                Exchange::AUDIT,
-                ExchangeKind::Direct,
-                ExchangeDeclareOptions {
-                    durable: true,
-                    ..Default::default()
-                },
-                FieldTable::default(),
-            )
-            .await?;
 
         // Use the event type as routing key for flexible audit event routing
         let event_type = payload.event_type();
