@@ -35,7 +35,6 @@ pub(crate) mod setup {
     };
 
     use crate::connection::{AvailableMicroservices, RabbitMQClient, RabbitMQError};
-    use crate::queue_consumer_props::Queue;
     use lapin::topology::TopologyDefinition;
     use lapin::types::FieldTable;
     use lapin::BasicProperties;

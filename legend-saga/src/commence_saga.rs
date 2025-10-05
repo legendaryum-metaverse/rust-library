@@ -151,11 +151,10 @@ mod commence {
     use crate::queue_consumer_props::Queue;
     use crate::test::setup::TestSetup;
     use futures_lite::StreamExt;
-    use lapin::options::{BasicConsumeOptions, QueueDeclareOptions};
+    use lapin::options::{BasicConsumeOptions};
     use serde_json::json;
     use std::time::Duration;
-    use lapin::types::FieldTable;
-    use crate::connection::{get_or_init_publish_channel, RabbitMQClient};
+    use crate::connection::{RabbitMQClient};
 
     /// The saga commence message is sent to the transactional microservice that listens in "commence_saga"
     #[test]
