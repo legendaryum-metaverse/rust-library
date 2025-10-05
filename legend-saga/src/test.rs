@@ -35,6 +35,7 @@ pub(crate) mod setup {
     };
 
     use crate::connection::{AvailableMicroservices, RabbitMQClient, RabbitMQError};
+    use crate::queue_consumer_props::Queue;
     use lapin::topology::TopologyDefinition;
     use lapin::types::FieldTable;
     use lapin::BasicProperties;
@@ -110,6 +111,9 @@ pub(crate) mod setup {
             options: BasicConsumeOptions,
         ) -> Result<impl Stream<Item = Result<T, RabbitMQError>>, RabbitMQError> {
             let channel = self.events_channel.lock().await;
+            channel
+                .queue_declare(queue_name, Default::default(), Default::default())
+                .await?;
             let consumer = channel
                 .basic_consume(queue_name, "my_consumer", options, FieldTable::default())
                 .await?;
