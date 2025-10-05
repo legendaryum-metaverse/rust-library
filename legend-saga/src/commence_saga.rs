@@ -1,6 +1,5 @@
 use crate::queue_consumer_props::Queue;
-use lapin::options::QueueDeclareOptions;
-use lapin::{options::BasicPublishOptions, types::FieldTable, BasicProperties};
+use lapin::{options::BasicPublishOptions, BasicProperties};
 use serde::{Deserialize, Serialize};
 use strum_macros::{AsRefStr, EnumIter, EnumString};
 use crate::connection::{get_or_init_publish_channel, RabbitMQClient, RabbitMQError};
@@ -112,17 +111,6 @@ impl RabbitMQClient {
         let channel_arc = get_or_init_publish_channel().await?;
         let channel = channel_arc.lock().await;
 
-        channel
-            .queue_declare(
-                queue_name,
-                QueueDeclareOptions {
-                    durable: true,
-                    ..QueueDeclareOptions::default()
-                },
-                FieldTable::default(),
-            )
-            .await?;
-
         let body = serde_json::to_vec(payload)?;
 
         channel
@@ -163,10 +151,10 @@ mod commence {
     use crate::queue_consumer_props::Queue;
     use crate::test::setup::TestSetup;
     use futures_lite::StreamExt;
-    use lapin::options::BasicConsumeOptions;
+    use lapin::options::{BasicConsumeOptions};
     use serde_json::json;
     use std::time::Duration;
-    use crate::connection::RabbitMQClient;
+    use crate::connection::{RabbitMQClient};
 
     /// The saga commence message is sent to the transactional microservice that listens in "commence_saga"
     #[test]
@@ -184,20 +172,25 @@ mod commence {
                 }
             );
 
-            let payload: PurchaseResourceFlowPayload =
-                serde_json::from_value(json_payload).unwrap();
-
-            RabbitMQClient::commence_saga(payload).await.unwrap();
+                // Para que este micro pueda realizar pasos del saga y realizar commence_saga ops las queue's deben existir, no es responsabilidad
+                // de los micros crear estos recursos, el micro "transactional" debe crear estos recursos -> "queue.CommenceSaga" en commenceSagaListener
+                // y "queue.ReplyToSaga" en startGlobalSagaStepListener
 
             // The transactional microservice receives the message and processes it
             let mut consumer = setup
                 .client
+                // Simulando "consumo", "commenceSagaListener" se encuentra implementado en TS y es el responsable de crear la queue.
                 .consume_messages::<CommenceSaga<PurchaseResourceFlowPayload>>(
                     Queue::COMMENCE_SAGA,
                     BasicConsumeOptions::default(),
                 )
                 .await
                 .expect("Failed to create consumer");
+
+            let payload: PurchaseResourceFlowPayload =
+                serde_json::from_value(json_payload).unwrap();
+
+            RabbitMQClient::commence_saga(payload).await.unwrap();
 
             let received_message = tokio::time::timeout(Duration::from_secs(2), consumer.next())
                 .await
@@ -231,21 +224,26 @@ mod commence {
                 },
             ];
 
-            let payload = RankingsUsersRewardPayload {
-                rewards: rewards.clone(),
-            };
 
-            RabbitMQClient::commence_saga(payload).await.unwrap();
+            // Para que este micro pueda realizar pasos del saga y realizar commence_saga ops las queue's deben existir, no es responsabilidad
+            // de los micros crear estos recursos, el micro "transactional" debe crear estos recursos -> "queue.CommenceSaga" en commenceSagaListener
+            // y "queue.ReplyToSaga" en startGlobalSagaStepListener
 
             // The transactional microservice receives the message and processes it
             let mut consumer = setup
                 .client
+                // Simulando "consumo", "commenceSagaListener" se encuentra implementado en TS y es el responsable de crear la queue.
                 .consume_messages::<CommenceSaga<RankingsUsersRewardPayload>>(
                     Queue::COMMENCE_SAGA,
                     BasicConsumeOptions::default(),
                 )
                 .await
                 .expect("Failed to create consumer");
+
+            let payload = RankingsUsersRewardPayload {
+                rewards: rewards.clone(),
+            };
+            RabbitMQClient::commence_saga(payload).await.unwrap();
 
             let received_message = tokio::time::timeout(Duration::from_secs(2), consumer.next())
                 .await
