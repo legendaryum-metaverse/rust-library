@@ -36,6 +36,8 @@ pub enum AvailableMicroservices {
 
 #[derive(Error, Debug)]
 pub enum RabbitMQError {
+    #[error("Client already initialized: {0}")]
+    AlreadyInitialized(String),
     #[error("Connection error: {0}")]
     ConnectionError(#[from] lapin::Error),
     #[error("Serialization error: {0}")]
@@ -52,8 +54,8 @@ pub enum RabbitMQError {
     InvalidEventKey(String),
     #[error("Invalid payload: {0}")]
     InvalidPayload(String),
-    #[error("Rabbit uri is not set, you need to call RabbitMQClient::new() first")]
-    RabbitUri(),
+    #[error("{0} is not set, you need to call RabbitMQClient::new() first")]
+    ValueIsNotSet(String),
 }
 
 #[derive(Debug, Error)]
@@ -109,8 +111,16 @@ pub(crate) static RABBIT_URI: OnceCell<String> = OnceCell::new();
 
 pub(crate) static PUBLISH_CHANNEL: OnceCell<Arc<Mutex<Channel>>> = OnceCell::new();
 
+pub(crate) static MICROSERVICE: OnceCell<String> = OnceCell::new();
+
+pub(crate) fn get_stored_microservice() -> Result<String, RabbitMQError> {
+    MICROSERVICE.get()
+        .cloned()
+        .ok_or(RabbitMQError::ValueIsNotSet("microservice".to_string()))
+}
+
 pub(crate) async fn get_or_init_publish_channel() -> Result<Arc<Mutex<Channel>>, RabbitMQError>  {
-    let rabbit_uri = RABBIT_URI.get().ok_or(RabbitMQError::RabbitUri())?;
+    let rabbit_uri = RABBIT_URI.get().ok_or(RabbitMQError::ValueIsNotSet("rabbit_uri".to_string()))?;
     let connection = RabbitMQClient::get_connection(rabbit_uri.to_string()).await?.read().await;
 
     match PUBLISH_CHANNEL.get() {
@@ -138,7 +148,8 @@ impl RabbitMQClient {
         microservice: AvailableMicroservices,
         events: Option<&'static [MicroserviceEvent]>,
     ) -> Result<Self, RabbitMQError> {
-        RABBIT_URI.set(rabbit_uri.to_string()).unwrap_or(());
+        RABBIT_URI.set(rabbit_uri.to_string()).map_err(|_| RabbitMQError::AlreadyInitialized("rabbit_uri".to_string()))?;
+        MICROSERVICE.set(microservice.as_ref().to_string()).map_err(|_| RabbitMQError::AlreadyInitialized("microservice".to_string()))?;
 
         let connection = Self::get_connection(rabbit_uri.to_string()).await?.read().await;
 
