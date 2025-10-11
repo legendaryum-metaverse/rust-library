@@ -13,6 +13,7 @@ Use this prompt to update `CLAUDE.md` when the project evolves.
 ### When to Update
 
 Update `CLAUDE.md` when:
+
 - ✅ Core architecture changes (new major features, patterns)
 - ✅ Critical development rules change (testing requirements, workflows)
 - ✅ Project metadata changes (version bumps, repository structure)
@@ -20,6 +21,7 @@ Update `CLAUDE.md` when:
 - ✅ File organization changes significantly
 
 **Don't update** for:
+
 - ❌ Individual feature additions (unless they change patterns)
 - ❌ Bug fixes
 - ❌ Minor version bumps
@@ -42,6 +44,7 @@ The document follows this structure for a reason:
 ### Writing Principles
 
 **DO**:
+
 - Use clear, scannable headers
 - Provide concrete examples with code snippets
 - Explain the "why" for critical rules (e.g., why `--test-threads=1`)
@@ -50,6 +53,7 @@ The document follows this structure for a reason:
 - Keep it actionable ("Add to X", not "There is an X")
 
 **DON'T**:
+
 - Add version-specific "Recent Changes" sections
 - Include mermaid diagrams (they become stale)
 - Speculate on future features/roadmap
@@ -63,11 +67,11 @@ The document follows this structure for a reason:
 # 1. Check current state
 git log --oneline -10
 cat Cargo.toml | grep version
-make test  # Verify test count/setup hasn't changed
+make test # Verify test count/setup hasn't changed
 
 # 2. Identify what changed
-git diff main CLAUDE.md  # If comparing branches
-git log --since="1 month ago" --oneline  # Recent work
+git diff main CLAUDE.md                 # If comparing branches
+git log --since="1 month ago" --oneline # Recent work
 
 # 3. Update CLAUDE.md sections as needed
 # - Update version in "What is This?"
@@ -77,7 +81,7 @@ git log --since="1 month ago" --oneline  # Recent work
 # - Update "Common Tasks" if workflows changed
 
 # 4. Verify length
-wc -l CLAUDE.md  # Should be 150-200 lines
+wc -l CLAUDE.md # Should be 150-200 lines
 
 # 5. Test readability
 # Ask yourself: "Can a new session understand this in 2 minutes?"
@@ -88,20 +92,24 @@ wc -l CLAUDE.md  # Should be 150-200 lines
 ### ✅ Good Updates
 
 **Scenario**: New retry strategy added
+
 ```markdown
 ## Critical Development Rules
 
 ### Code Patterns
 
 **DON'T**:
+
 - Hard-code retry delays (use backoff strategies)
 
 **DO**:
+
 - Use `fibonacci_backoff()` for progressive delays
 - Use `exponential_backoff()` for rapid retries
 ```
 
 **Scenario**: New test pattern discovered
+
 ```markdown
 ## Troubleshooting
 
@@ -110,17 +118,19 @@ wc -l CLAUDE.md  # Should be 150-200 lines
 ```
 
 **Scenario**: Project structure changed
+
 ```markdown
 ## Key Files Reference
 
-| File                     | Purpose                          |
-|--------------------------|----------------------------------|
+| File                        | Purpose                             |
+| --------------------------- | ----------------------------------- |
 | `legend-saga/src/events.rs` | Event definitions (moved from root) |
 ```
 
 ### ❌ Bad Updates
 
 **Too specific** (belongs in code comments):
+
 ```markdown
 ## Implementation Details
 
@@ -129,6 +139,7 @@ to track processing state. The mutex is acquired at line 134...
 ```
 
 **Version-specific** (gets stale immediately):
+
 ```markdown
 ## Recent Changes in v0.0.42
 
@@ -138,6 +149,7 @@ to track processing state. The mutex is acquired at line 134...
 ```
 
 **Speculative** (may never happen):
+
 ```markdown
 ## Future Plans
 
@@ -150,8 +162,10 @@ machine learning-based routing in Q3 2025...
 Use these templates when adding new content:
 
 ### New Common Task
-```markdown
+
+````markdown
 ### [Task Name]
+
 ```bash
 # Brief description of what this does
 command --with-flags argument
@@ -160,18 +174,22 @@ command --with-flags argument
 step_one
 step_two
 ```
+````
 
 Why this is needed: [one sentence explanation]
-```
+
+````
 
 ### New Troubleshooting Entry
 ```markdown
 **[Symptom]**: [Solution in imperative form]
-```
+````
 
 ### New Code Pattern
+
 ```markdown
 **[Category]**:
+
 - [Rule as DON'T/DO statement]
 ```
 
@@ -214,6 +232,7 @@ A good `CLAUDE.md` update means:
 ---
 
 **Remember**: This document serves future AI sessions, not humans. Optimize for:
+
 - **Fast scanning** (clear headers, short paragraphs)
 - **Actionable content** (commands > descriptions)
 - **Timeless knowledge** (patterns > implementations)
