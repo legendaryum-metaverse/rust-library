@@ -1,11 +1,14 @@
-use crate::events::PayloadEvent;
+use crate::events::{AuditPublishedPayload, PayloadEvent};
 use crate::queue_consumer_props::Exchange;
 use lapin::{
     options::BasicPublishOptions, types::AMQPValue,
     types::FieldTable, BasicProperties,
 };
 use serde::Serialize;
-use crate::connection::{get_or_init_publish_channel, RabbitMQClient, RabbitMQError};
+use crate::connection::{get_or_init_publish_channel, get_stored_microservice, RabbitMQClient, RabbitMQError};
+use std::time::{SystemTime, UNIX_EPOCH};
+use tracing::error;
+use uuid::Uuid;
 
 impl RabbitMQClient {
     pub async fn publish_event<T: PayloadEvent + Serialize>(
@@ -13,6 +16,12 @@ impl RabbitMQClient {
     ) -> Result<(), RabbitMQError> {
         let channel_arc = get_or_init_publish_channel().await?;
         let channel = channel_arc.lock().await;
+
+        // Generate UUID v7 for event correlation across all audit events
+        let event_id = Uuid::now_v7().to_string();
+
+        // Get publisher microservice name
+        let publisher_microservice = get_stored_microservice()?;
 
         let event_type = payload.event_type();
         let mut header_event = FieldTable::default();
@@ -24,6 +33,7 @@ impl RabbitMQClient {
 
         let body = serde_json::to_vec(&payload)?;
 
+        // Publish main event with message properties for tracking
         channel
             .basic_publish(
                 Exchange::MATCHING,
@@ -33,9 +43,31 @@ impl RabbitMQClient {
                 BasicProperties::default()
                     .with_headers(header_event)
                     .with_content_type("application/json".into())
-                    .with_delivery_mode(2), // persistent
+                    .with_delivery_mode(2) // persistent
+                    .with_message_id(event_id.clone().into())
+                    .with_app_id(publisher_microservice.clone().into()),
             )
             .await?;
+
+        // Emit audit.published event (fire-and-forget - never fail the main flow)
+        let timestamp = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs();
+
+        let audit_payload = AuditPublishedPayload {
+            publisher_microservice,
+            published_event: event_type.as_ref().to_string(),
+            published_at: timestamp,
+            event_id,
+        };
+
+        // Fire-and-forget: log errors but don't fail the publish operation
+        tokio::spawn(async move {
+            if let Err(e) = RabbitMQClient::publish_audit_event(audit_payload).await {
+                error!("Failed to emit audit.published event: {:?}", e);
+            }
+        });
 
         Ok(())
     }
@@ -50,7 +82,7 @@ impl RabbitMQClient {
 
         // Use the event type as routing key for flexible audit event routing
         let event_type = payload.event_type();
-        let routing_key = event_type.as_ref(); // "audit.received", "audit.processed", or "audit.dead_letter"
+        let routing_key = event_type.as_ref(); // "audit.received", "audit.processed", "audit.dead_letter"
 
         let body = serde_json::to_vec(&payload)?;
 
@@ -69,19 +101,6 @@ impl RabbitMQClient {
         Ok(())
     }
 
-    /// Publishes audit.received events - convenience wrapper
-    pub async fn publish_audit_received_event<T: PayloadEvent + Serialize>(
-        payload: T,
-    ) -> Result<(), RabbitMQError> {
-        Self::publish_audit_event(payload).await
-    }
-
-    /// Publishes audit.dead_letter events - convenience wrapper
-    pub async fn publish_audit_dead_letter_event<T: PayloadEvent + Serialize>(
-        payload: T,
-    ) -> Result<(), RabbitMQError> {
-        Self::publish_audit_event(payload).await
-    }
 }
 
 /// Integration test, the micro publishes an event and the "same" microservice client listens to it

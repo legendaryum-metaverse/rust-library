@@ -147,6 +147,8 @@ impl Nack {
                 BasicProperties::default()
                     .with_expiration(delay.as_millis().to_string().into())
                     .with_headers(new_headers)
+                    .with_app_id(self.delivery.app_id().clone().unwrap_or_default())
+                    .with_message_id(self.delivery.message_id().clone().unwrap_or_default())
                     .with_delivery_mode(2), // persistent
             )
             .await?;

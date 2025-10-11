@@ -21,7 +21,8 @@ pub struct MyDelivery {
     // /// Contains the properties and the headers of the
     // /// message.
     // pub properties: BasicProperties,
-
+    app_id: Option<ShortString>,
+    message_id: Option<ShortString>,
     /// The payload of the message in binary format.
     pub data: Vec<u8>,
     pub headers: FieldTable,
@@ -37,6 +38,25 @@ impl MyDelivery {
             headers: delivery.properties.headers().clone().unwrap_or_default(),
             // properties: delivery.properties.clone(),
             data: delivery.data.clone(),
+            app_id: delivery.properties.app_id().to_owned(),
+            message_id: delivery.properties.message_id().to_owned()
         }
+    }
+    pub fn app_id(&self) -> &Option<ShortString> {
+        &self.app_id
+    }
+
+    pub fn message_id(&self) -> &Option<ShortString> {
+        &self.message_id
+    }
+    
+    pub fn with_app_id(mut self, value: ShortString) -> Self {
+        self.app_id = Some(value);
+        self
+    }
+
+    pub fn with_message_id(mut self, value: ShortString) -> Self {
+        self.message_id = Some(value);
+        self
     }
 }
