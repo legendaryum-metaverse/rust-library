@@ -95,6 +95,18 @@ impl RabbitMQClient {
         let mut emitter_guard = self.audit_emitter.lock().await;
         let emitter = emitter_guard.get_or_insert_with(Emitter::new).clone();
 
+        // Spawn consumer for audit.published events
+        tokio::spawn({
+            let client = self.clone();
+            let emitter = emitter.clone();
+
+            async move {
+                if let Err(e) = client.consume_audit_published_events(emitter).await {
+                    error!("Error consuming audit.published events: {:?}", e);
+                }
+            }
+        });
+
         // Spawn consumer for audit.received events
         tokio::spawn({
             let client = self.clone();
@@ -189,7 +201,7 @@ mod test_audit_consumer {
 
                         // Assert on our test event
                         assert_eq!(audit_payload.processed_event, "auth.new_sign_up");
-                        assert_eq!(audit_payload.microservice, "auth");
+                        assert_eq!(audit_payload.publisher_microservice, "auth");
 
                         // Use audit_ack to avoid recursive audit emission
                         handler
@@ -209,11 +221,12 @@ mod test_audit_consumer {
 
             // Create and publish an audit event manually to test the flow
             let test_audit_payload = AuditProcessedPayload {
-                microservice: "auth".to_string(),
+                publisher_microservice: "auth".to_string(),
+                processor_microservice: "auth".to_string(),
                 processed_event: "auth.new_sign_up".to_string(),
                 processed_at: now_unix,
                 queue_name: "auth_match_commands".to_string(),
-                event_id: None,
+                event_id: uuid::Uuid::now_v7().to_string()
             };
 
             // Publish the audit event to the audit exchange

@@ -147,6 +147,8 @@ impl Nack {
                 BasicProperties::default()
                     .with_expiration(delay.as_millis().to_string().into())
                     .with_headers(new_headers)
+                    .with_app_id(self.delivery.app_id().clone().unwrap_or_default())
+                    .with_message_id(self.delivery.message_id().clone().unwrap_or_default())
                     .with_delivery_mode(2), // persistent
             )
             .await?;
@@ -219,6 +221,13 @@ mod test_nack {
                 let barrier = c_barrier.clone();
 
                 async move {
+
+                    // Assert in consume and nack consume. En nack se tiene que pasar de nuevo estas props, chequear "publish_requeue"
+                    let publisher_microservice = handler.publisher_microservice();
+                    assert_eq!(publisher_microservice, "room-creator");
+                    let event_id = handler.event_id();
+                    assert!(uuid::Uuid::parse_str(event_id).is_ok());
+
                     if count == 2 {
                         let p: CoinsSendEmailPayload =
                             handler.parse_payload().expect("Failed to parse payload");

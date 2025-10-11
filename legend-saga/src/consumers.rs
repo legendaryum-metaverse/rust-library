@@ -326,6 +326,18 @@ impl RabbitMQClient {
             )
             .await?;
 
+        // Create separate queue for audit.published events
+        channel
+            .queue_declare(
+                Queue::AUDIT_PUBLISHED_COMMANDS,
+                QueueDeclareOptions {
+                    durable: true,
+                    ..Default::default()
+                },
+                FieldTable::default(),
+            )
+            .await?;
+
         // Create separate queue for audit.received events
         channel
             .queue_declare(
@@ -363,6 +375,16 @@ impl RabbitMQClient {
             .await?;
 
         // Bind each queue to its specific routing key
+        channel
+            .queue_bind(
+                Queue::AUDIT_PUBLISHED_COMMANDS,
+                Exchange::AUDIT,
+                "audit.published",
+                QueueBindOptions::default(),
+                FieldTable::default(),
+            )
+            .await?;
+
         channel
             .queue_bind(
                 Queue::AUDIT_RECEIVED_COMMANDS,

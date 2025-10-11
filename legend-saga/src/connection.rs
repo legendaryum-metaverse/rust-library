@@ -10,6 +10,7 @@ use crate::events::MicroserviceEvent;
 use backoff::{Error as BackoffError, ExponentialBackoff};
 use once_cell::sync::OnceCell;
 use crate::start::{AuditEmitter, EventEmitter, SagaEmitter};
+use std::sync::RwLock as StdRwLock;
 
 #[derive(Debug, Clone, PartialEq, Eq, EnumString, AsRefStr, EnumIter, Serialize, Deserialize)]
 #[strum(serialize_all = "kebab-case")]
@@ -52,8 +53,8 @@ pub enum RabbitMQError {
     InvalidEventKey(String),
     #[error("Invalid payload: {0}")]
     InvalidPayload(String),
-    #[error("Rabbit uri is not set, you need to call RabbitMQClient::new() first")]
-    RabbitUri(),
+    #[error("{0} is not set, you need to call RabbitMQClient::new() first")]
+    ValueIsNotSet(String),
 }
 
 #[derive(Debug, Error)]
@@ -105,13 +106,27 @@ impl Clone for RabbitMQClient {
 // RwLock for the connection because we expect many concurrent reads (status checks) and infrequent writes (reconnections).
 static CONNECTION: OnceCell<RwLock<Connection>> = OnceCell::new();
 
-pub(crate) static RABBIT_URI: OnceCell<String> = OnceCell::new();
+pub(crate) static RABBIT_URI: StdRwLock<Option<String>> = StdRwLock::new(None);
 
 pub(crate) static PUBLISH_CHANNEL: OnceCell<Arc<Mutex<Channel>>> = OnceCell::new();
 
+pub(crate) static MICROSERVICE: StdRwLock<Option<String>> = StdRwLock::new(None);
+
+pub(crate) fn get_stored_microservice() -> Result<String, RabbitMQError> {
+    MICROSERVICE
+        .read()
+        .unwrap()
+        .clone()
+        .ok_or(RabbitMQError::ValueIsNotSet("microservice".to_string()))
+}
+
 pub(crate) async fn get_or_init_publish_channel() -> Result<Arc<Mutex<Channel>>, RabbitMQError>  {
-    let rabbit_uri = RABBIT_URI.get().ok_or(RabbitMQError::RabbitUri())?;
-    let connection = RabbitMQClient::get_connection(rabbit_uri.to_string()).await?.read().await;
+    let rabbit_uri = RABBIT_URI
+        .read()
+        .unwrap()
+        .clone()
+        .ok_or(RabbitMQError::ValueIsNotSet("rabbit_uri".to_string()))?;
+    let connection = RabbitMQClient::get_connection(rabbit_uri).await?.read().await;
 
     match PUBLISH_CHANNEL.get() {
         Some(channel) => {
@@ -133,12 +148,14 @@ pub(crate) async fn get_or_init_publish_channel() -> Result<Arc<Mutex<Channel>>,
 }
 
 impl RabbitMQClient {
+
     pub async fn new(
         rabbit_uri: &str,
         microservice: AvailableMicroservices,
         events: Option<&'static [MicroserviceEvent]>,
     ) -> Result<Self, RabbitMQError> {
-        RABBIT_URI.set(rabbit_uri.to_string()).unwrap_or(());
+        *RABBIT_URI.write().unwrap() = Some(rabbit_uri.to_string());
+        *MICROSERVICE.write().unwrap() = Some(microservice.as_ref().to_string());
 
         let connection = Self::get_connection(rabbit_uri.to_string()).await?.read().await;
 

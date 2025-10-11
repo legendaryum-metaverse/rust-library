@@ -20,6 +20,9 @@ pub enum MicroserviceEvent {
     /// Emitted when a message is rejected/nacked and sent to dead letter queue
     #[strum(serialize = "audit.dead_letter")]
     AuditDeadLetter,
+    /// Emitted when an event is published by a microservice (audit tracking)
+    #[strum(serialize = "audit.published")]
+    AuditPublished,
     #[strum(serialize = "auth.deleted_user")]
     AuthDeletedUser,
     #[strum(serialize = "auth.logout_user")]
@@ -654,16 +657,18 @@ impl PayloadEvent for LegendRankingsIntermediateRewardEventPayload {
 /// Payload for audit.received event - tracks when event is received before processing
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AuditReceivedPayload {
+    /// The microservice that published the original event
+    pub publisher_microservice: String,
     /// The microservice that received the event
-    pub microservice: String,
+    pub receiver_microservice: String,
     /// The event that was received
     pub received_event: String,
     /// Timestamp when the event was received (UNIX timestamp)
     pub received_at: u64,
     /// The queue name from which the event was consumed
     pub queue_name: String,
-    /// Optional event identifier for tracking
-    pub event_id: Option<String>,
+    /// Event identifier for cross-event correlation (UUID v7)
+    pub event_id: String,
 }
 
 impl PayloadEvent for AuditReceivedPayload {
@@ -675,16 +680,18 @@ impl PayloadEvent for AuditReceivedPayload {
 /// Payload for audit.processed event - tracks successful event processing
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AuditProcessedPayload {
+    /// The microservice that published the original event
+    pub publisher_microservice: String,
     /// The microservice that processed the event
-    pub microservice: String,
+    pub processor_microservice: String,
     /// The original event that was processed
     pub processed_event: String,
     /// Timestamp when the event was processed (UNIX timestamp)
     pub processed_at: u64,
     /// The queue name where the event was consumed
     pub queue_name: String,
-    /// Optional event identifier for tracking
-    pub event_id: Option<String>,
+    /// Event identifier for cross-event correlation (UUID v7)
+    pub event_id: String,
 }
 
 impl PayloadEvent for AuditProcessedPayload {
@@ -696,8 +703,10 @@ impl PayloadEvent for AuditProcessedPayload {
 /// Payload for audit.dead_letter event - tracks when message is rejected/nacked
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AuditDeadLetterPayload {
+    /// The microservice that published the original event
+    pub publisher_microservice: String,
     /// The microservice that rejected the event
-    pub microservice: String,
+    pub rejector_microservice: String,
     /// The original event that was rejected
     pub rejected_event: String,
     /// Timestamp when the event was rejected (UNIX timestamp)
@@ -708,12 +717,31 @@ pub struct AuditDeadLetterPayload {
     pub rejection_reason: String,
     /// Optional retry count
     pub retry_count: Option<u32>,
-    /// Optional event identifier for tracking
-    pub event_id: Option<String>,
+    /// Event identifier for cross-event correlation (UUID v7)
+    pub event_id: String,
 }
 
 impl PayloadEvent for AuditDeadLetterPayload {
     fn event_type(&self) -> MicroserviceEvent {
         MicroserviceEvent::AuditDeadLetter
+    }
+}
+
+/// Payload for audit.published event - tracks when event is published at the source microservice
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct AuditPublishedPayload {
+    /// The microservice that published the event
+    pub publisher_microservice: String,
+    /// The event that was published
+    pub published_event: String,
+    /// Timestamp when the event was published (UNIX timestamp in seconds)
+    pub published_at: u64,
+    /// Event identifier for cross-event correlation (UUID v7)
+    pub event_id: String,
+}
+
+impl PayloadEvent for AuditPublishedPayload {
+    fn event_type(&self) -> MicroserviceEvent {
+        MicroserviceEvent::AuditPublished
     }
 }

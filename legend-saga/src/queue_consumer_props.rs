@@ -6,6 +6,8 @@ impl Queue {
     pub const REPLY_TO_SAGA: &'static str = "reply_to_saga";
     /// Queue used for commencing a saga.
     pub const COMMENCE_SAGA: &'static str = "commence_saga";
+    /// Queue for audit.published events
+    pub const AUDIT_PUBLISHED_COMMANDS: &'static str = "audit_published_commands";
     /// Queue for audit.received events
     pub const AUDIT_RECEIVED_COMMANDS: &'static str = "audit_received_commands";
     /// Queue for audit.processed events
