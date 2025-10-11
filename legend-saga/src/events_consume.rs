@@ -29,6 +29,15 @@ pub struct EventHandler {
     event_id: String,
 }
 impl EventHandler {
+
+    pub fn publisher_microservice(&self) -> &String {
+        &self.publisher_microservice
+    }
+
+    pub fn event_id(&self) -> &String {
+        &self.event_id
+    }
+    
     pub fn parse_payload<T>(&self) -> Result<T, serde_json::Error>
     where
         T: for<'de> Deserialize<'de>,
