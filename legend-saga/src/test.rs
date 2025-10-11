@@ -34,7 +34,7 @@ pub(crate) mod setup {
         QueueDeleteOptions,
     };
 
-    use crate::connection::{AvailableMicroservices, RabbitMQClient, RabbitMQError};
+    use crate::connection::{AvailableMicroservices, RabbitMQClient, RabbitMQError, MICROSERVICE};
     use lapin::topology::TopologyDefinition;
     use lapin::types::FieldTable;
     use lapin::BasicProperties;
@@ -176,6 +176,12 @@ pub(crate) mod setup {
             TestSetup { rt, client }
         }
 
+        /// Clean static variables (useful for testing)
+        pub(crate) fn clean_vars() {
+            *crate::connection::RABBIT_URI.write().unwrap() = None;
+            *MICROSERVICE.write().unwrap() = None;
+        }
+
         pub(crate) async fn get_current_topology(&self) -> TopologyDefinition {
             self.client
                 .current_connection()
@@ -271,6 +277,7 @@ pub(crate) mod setup {
     impl Drop for TestSetup {
         fn drop(&mut self) {
             self.rt.block_on(async {
+                Self::clean_vars();
                 self.clean_topology(None).await;
             });
         }
