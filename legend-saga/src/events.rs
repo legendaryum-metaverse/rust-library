@@ -83,6 +83,8 @@ pub enum MicroserviceEvent {
     LegendRankingsNewRankingCreated,
     #[strum(serialize = "legend_rankings.intermediate_reward")]
     LegendRankingsIntermediateReward,
+    #[strum(serialize = "legend_rankings.participation_reward")]
+    LegendRankingsParticipationReward,
 }
 
 pub trait PayloadEvent {
@@ -650,6 +652,23 @@ pub struct LegendRankingsIntermediateRewardEventPayload {
 impl PayloadEvent for LegendRankingsIntermediateRewardEventPayload {
     fn event_type(&self) -> MicroserviceEvent {
         MicroserviceEvent::LegendRankingsIntermediateReward
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct LegendRankingsParticipationRewardEventPayload {
+    pub user_id: String,
+    pub ranking_id: i32,
+    pub participation_reward_type: String,
+    pub reward_config: serde_json::Value,
+    pub template_name: String,
+    pub template_data: serde_json::Value,
+}
+
+impl PayloadEvent for LegendRankingsParticipationRewardEventPayload {
+    fn event_type(&self) -> MicroserviceEvent {
+        MicroserviceEvent::LegendRankingsParticipationReward
     }
 }
 
