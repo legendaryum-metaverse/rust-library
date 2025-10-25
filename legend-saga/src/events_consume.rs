@@ -58,7 +58,7 @@ impl EventHandler {
         let timestamp = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap_or_default()
-            .as_secs();
+            .as_millis() as u64;
 
         let audit_payload = AuditProcessedPayload {
             publisher_microservice: self.publisher_microservice.clone(),
@@ -90,7 +90,7 @@ impl EventHandler {
         let timestamp = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap_or_default()
-            .as_secs();
+            .as_millis() as u64;
 
         let audit_payload = AuditDeadLetterPayload {
             publisher_microservice: self.publisher_microservice.clone(),
@@ -128,7 +128,7 @@ impl EventHandler {
         let timestamp = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap_or_default()
-            .as_secs();
+            .as_millis() as u64;
 
         let audit_payload = AuditDeadLetterPayload {
             publisher_microservice: self.publisher_microservice.clone(),
@@ -230,7 +230,7 @@ impl RabbitMQClient {
         let timestamp = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap_or_default()
-            .as_secs();
+            .as_millis() as u64;
 
         let audit_payload = AuditReceivedPayload {
             publisher_microservice: publisher_microservice.clone(),

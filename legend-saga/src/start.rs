@@ -217,7 +217,7 @@ mod test_audit_consumer {
             let now_unix =  SystemTime::now()
                 .duration_since(UNIX_EPOCH)
                 .unwrap_or_default()
-                .as_secs();
+                .as_millis() as u64;
 
             // Create and publish an audit event manually to test the flow
             let test_audit_payload = AuditProcessedPayload {

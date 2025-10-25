@@ -682,7 +682,7 @@ pub struct AuditReceivedPayload {
     pub receiver_microservice: String,
     /// The event that was received
     pub received_event: String,
-    /// Timestamp when the event was received (UNIX timestamp)
+    /// Timestamp when the event was received (UNIX timestamp in milliseconds)
     pub received_at: u64,
     /// The queue name from which the event was consumed
     pub queue_name: String,
@@ -705,7 +705,7 @@ pub struct AuditProcessedPayload {
     pub processor_microservice: String,
     /// The original event that was processed
     pub processed_event: String,
-    /// Timestamp when the event was processed (UNIX timestamp)
+    /// Timestamp when the event was processed (UNIX timestamp in milliseconds)
     pub processed_at: u64,
     /// The queue name where the event was consumed
     pub queue_name: String,
@@ -728,7 +728,7 @@ pub struct AuditDeadLetterPayload {
     pub rejector_microservice: String,
     /// The original event that was rejected
     pub rejected_event: String,
-    /// Timestamp when the event was rejected (UNIX timestamp)
+    /// Timestamp when the event was rejected (UNIX timestamp in milliseconds)
     pub rejected_at: u64,
     /// The queue name where the event was rejected from
     pub queue_name: String,
@@ -753,7 +753,7 @@ pub struct AuditPublishedPayload {
     pub publisher_microservice: String,
     /// The event that was published
     pub published_event: String,
-    /// Timestamp when the event was published (UNIX timestamp in seconds)
+    /// Timestamp when the event was published (UNIX timestamp in milliseconds)
     pub published_at: u64,
     /// Event identifier for cross-event correlation (UUID v7)
     pub event_id: String,
@@ -762,5 +762,160 @@ pub struct AuditPublishedPayload {
 impl PayloadEvent for AuditPublishedPayload {
     fn event_type(&self) -> MicroserviceEvent {
         MicroserviceEvent::AuditPublished
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    // Year 2020 in milliseconds (Jan 1, 2020 00:00:00 UTC)
+    const YEAR_2020_MS: u64 = 1577836800000;
+    // Year 2030 in milliseconds (Jan 1, 2030 00:00:00 UTC)
+    const YEAR_2030_MS: u64 = 1893456000000;
+
+    #[test]
+    fn test_audit_published_payload_timestamp_precision() {
+        let current_ms = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_millis() as u64;
+
+        let payload = AuditPublishedPayload {
+            publisher_microservice: "test-service".to_string(),
+            published_event: "test.event".to_string(),
+            published_at: current_ms,
+            event_id: "test-uuid".to_string(),
+        };
+
+        // Verify timestamp is in reasonable range (year 2020-2030)
+        assert!(
+            payload.published_at > YEAR_2020_MS,
+            "Timestamp {} should be after year 2020 ({})",
+            payload.published_at,
+            YEAR_2020_MS
+        );
+        assert!(
+            payload.published_at < YEAR_2030_MS,
+            "Timestamp {} should be before year 2030 ({})",
+            payload.published_at,
+            YEAR_2030_MS
+        );
+
+        // Verify millisecond precision (should have 3+ more digits than seconds)
+        let as_seconds = payload.published_at / 1000;
+        assert!(
+            payload.published_at > as_seconds * 1000,
+            "Timestamp should have millisecond precision, not just seconds"
+        );
+    }
+
+    #[test]
+    fn test_audit_received_payload_timestamp_precision() {
+        let current_ms = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_millis() as u64;
+
+        let payload = AuditReceivedPayload {
+            publisher_microservice: "publisher-service".to_string(),
+            receiver_microservice: "receiver-service".to_string(),
+            received_event: "test.event".to_string(),
+            received_at: current_ms,
+            queue_name: "test_queue".to_string(),
+            event_id: "test-uuid".to_string(),
+        };
+
+        // Verify timestamp is in reasonable range
+        assert!(payload.received_at > YEAR_2020_MS);
+        assert!(payload.received_at < YEAR_2030_MS);
+
+        // Verify millisecond precision
+        let as_seconds = payload.received_at / 1000;
+        assert!(payload.received_at > as_seconds * 1000);
+    }
+
+    #[test]
+    fn test_audit_processed_payload_timestamp_precision() {
+        let current_ms = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_millis() as u64;
+
+        let payload = AuditProcessedPayload {
+            publisher_microservice: "publisher-service".to_string(),
+            processor_microservice: "processor-service".to_string(),
+            processed_event: "test.event".to_string(),
+            processed_at: current_ms,
+            queue_name: "test_queue".to_string(),
+            event_id: "test-uuid".to_string(),
+        };
+
+        // Verify timestamp is in reasonable range
+        assert!(payload.processed_at > YEAR_2020_MS);
+        assert!(payload.processed_at < YEAR_2030_MS);
+
+        // Verify millisecond precision
+        let as_seconds = payload.processed_at / 1000;
+        assert!(payload.processed_at > as_seconds * 1000);
+    }
+
+    #[test]
+    fn test_audit_dead_letter_payload_timestamp_precision() {
+        let current_ms = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_millis() as u64;
+
+        let payload = AuditDeadLetterPayload {
+            publisher_microservice: "publisher-service".to_string(),
+            rejector_microservice: "rejector-service".to_string(),
+            rejected_event: "test.event".to_string(),
+            rejected_at: current_ms,
+            queue_name: "test_queue".to_string(),
+            rejection_reason: "test_reason".to_string(),
+            retry_count: Some(3),
+            event_id: "test-uuid".to_string(),
+        };
+
+        // Verify timestamp is in reasonable range
+        assert!(payload.rejected_at > YEAR_2020_MS);
+        assert!(payload.rejected_at < YEAR_2030_MS);
+
+        // Verify millisecond precision
+        let as_seconds = payload.rejected_at / 1000;
+        assert!(payload.rejected_at > as_seconds * 1000);
+    }
+
+    #[test]
+    fn test_millisecond_vs_second_timestamps() {
+        // Generate timestamp in milliseconds
+        let timestamp_ms = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_millis() as u64;
+
+        // Generate timestamp in seconds (old way)
+        let timestamp_s = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
+
+        // Milliseconds should be ~1000x larger than seconds
+        assert!(
+            timestamp_ms > timestamp_s * 100,
+            "Millisecond timestamp {} should be much larger than second timestamp {}",
+            timestamp_ms,
+            timestamp_s
+        );
+
+        // If treated as milliseconds, seconds would show as 1970
+        // (timestamp_s in milliseconds would be < year 2000)
+        assert!(
+            timestamp_s < YEAR_2020_MS,
+            "Second timestamp {} would be before year 2000 if treated as milliseconds",
+            timestamp_s
+        );
     }
 }
