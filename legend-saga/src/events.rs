@@ -302,6 +302,8 @@ pub struct CompletedRanking {
     pub nft_contract_address: Option<String>,
     // Present only if reward_type is "Crypto"
     pub wallet_crypto_asset: Option<String>,
+    /// Optional notification config (JSON) to enrich email templates
+    pub notification_config: Option<serde_json::Value>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
