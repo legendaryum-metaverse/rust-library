@@ -627,6 +627,7 @@ pub struct LegendRankingsNewRankingCreatedEventPayload {
     pub description: String,
     pub author_email: String,
     pub reward_type: String,
+    pub start_at: String,
     pub ends_at: String,
     pub nft_blockchain_network: Option<String>,
     pub nft_contract_address: Option<String>,
