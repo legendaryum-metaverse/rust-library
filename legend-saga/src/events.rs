@@ -331,7 +331,6 @@ impl PayloadEvent for LegendShowcaseUpdateAllowedRankingSubscriptionIdsEventPayl
     }
 }
 
-
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct SocialBlockChatPayload {
@@ -344,7 +343,6 @@ impl PayloadEvent for SocialBlockChatPayload {
         MicroserviceEvent::SocialBlockChat
     }
 }
-
 
 /// Gender represents the possible genders a social user can have.
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
