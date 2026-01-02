@@ -11,7 +11,6 @@ use crate::connection::{get_or_init_publish_channel, RabbitMQClient, RabbitMQErr
 #[serde(rename_all = "snake_case")]
 pub enum SagaTitle {
     PurchaseResourceFlow,
-    RankingsUsersReward,
     TransferCryptoRewardToMissionWinner,
     TransferCryptoRewardToRankingWinners
 }
@@ -20,28 +19,6 @@ pub trait PayloadCommenceSaga {
     fn saga_title(&self) -> SagaTitle;
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct UserReward {
-    pub user_id: String,
-    pub coins: i32,
-}
-impl PartialEq for UserReward {
-    fn eq(&self, other: &Self) -> bool {
-        self.user_id == other.user_id && self.coins == other.coins
-    }
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct RankingsUsersRewardPayload {
-    pub rewards: Vec<UserReward>,
-}
-impl PayloadCommenceSaga for RankingsUsersRewardPayload {
-    fn saga_title(&self) -> SagaTitle {
-        SagaTitle::RankingsUsersReward
-    }
-}
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -145,8 +122,8 @@ impl RabbitMQClient {
 #[cfg(test)]
 mod commence {
     use crate::commence_saga::{
-        CommenceSaga, PurchaseResourceFlowPayload, RankingsUsersRewardPayload, SagaTitle,
-        UserReward,
+        CommenceSaga, CompletedCryptoRanking, CryptoRankingWinners, PurchaseResourceFlowPayload,
+        SagaTitle, TransferCryptoRewardToRankingWinnersPayload,
     };
     use crate::queue_consumer_props::Queue;
     use crate::test::setup::TestSetup;
@@ -210,20 +187,22 @@ mod commence {
     }
 
     #[test]
-    fn test_commence_rankings_users_reward_saga() {
+    fn test_commence_transfer_crypto_reward_to_ranking_winners_saga() {
         let setup = TestSetup::new(None);
         setup.rt.block_on(async {
-            let rewards = vec![
-                UserReward {
-                    user_id: "user123".to_string(),
-                    coins: 100,
-                },
-                UserReward {
-                    user_id: "user456".to_string(),
-                    coins: 200,
-                },
-            ];
-
+            let completed_crypto_rankings = vec![CompletedCryptoRanking {
+                wallet_address: "0x1234567890abcdef".to_string(),
+                winners: vec![
+                    CryptoRankingWinners {
+                        user_id: "user123".to_string(),
+                        reward: "100".to_string(),
+                    },
+                    CryptoRankingWinners {
+                        user_id: "user456".to_string(),
+                        reward: "200".to_string(),
+                    },
+                ],
+            }];
 
             // Para que este micro pueda realizar pasos del saga y realizar commence_saga ops las queue's deben existir, no es responsabilidad
             // de los micros crear estos recursos, el micro "transactional" debe crear estos recursos -> "queue.CommenceSaga" en commenceSagaListener
@@ -233,15 +212,15 @@ mod commence {
             let mut consumer = setup
                 .client
                 // Simulando "consumo", "commenceSagaListener" se encuentra implementado en TS y es el responsable de crear la queue.
-                .consume_messages::<CommenceSaga<RankingsUsersRewardPayload>>(
+                .consume_messages::<CommenceSaga<TransferCryptoRewardToRankingWinnersPayload>>(
                     Queue::COMMENCE_SAGA,
                     BasicConsumeOptions::default(),
                 )
                 .await
                 .expect("Failed to create consumer");
 
-            let payload = RankingsUsersRewardPayload {
-                rewards: rewards.clone(),
+            let payload = TransferCryptoRewardToRankingWinnersPayload {
+                completed_crypto_rankings: completed_crypto_rankings.clone(),
             };
             RabbitMQClient::commence_saga(payload).await.unwrap();
 
@@ -253,12 +232,23 @@ mod commence {
 
             assert_eq!(
                 received_message.title,
-                SagaTitle::RankingsUsersReward,
+                SagaTitle::TransferCryptoRewardToRankingWinners,
                 "Received saga title should match sent title"
             );
             assert_eq!(
-                received_message.payload.rewards, rewards,
-                "Received message rewards should match sent rewards"
+                received_message.payload.completed_crypto_rankings.len(),
+                completed_crypto_rankings.len(),
+                "Received message should have same number of rankings"
+            );
+            assert_eq!(
+                received_message.payload.completed_crypto_rankings[0].wallet_address,
+                completed_crypto_rankings[0].wallet_address,
+                "Wallet address should match"
+            );
+            assert_eq!(
+                received_message.payload.completed_crypto_rankings[0].winners.len(),
+                completed_crypto_rankings[0].winners.len(),
+                "Winners count should match"
             );
         });
     }

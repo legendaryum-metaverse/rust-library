@@ -158,7 +158,7 @@ impl Nack {
 }
 #[cfg(test)]
 mod test_nack {
-    use crate::events::{AuthLogoutUserPayload, CoinsSendEmailPayload, MicroserviceEvent};
+    use crate::events::{AuthLogoutUserPayload, MicroserviceEvent, SocialBlockChatPayload};
     use crate::test::setup::{Config, TestSetup};
     use std::sync::atomic::AtomicUsize;
     use std::sync::Arc;
@@ -173,9 +173,9 @@ mod test_nack {
         let setup = TestSetup::new(Some(Config {
             events: &[
                 MicroserviceEvent::AuthLogoutUser,
-                MicroserviceEvent::CoinsSendEmail,
+                MicroserviceEvent::SocialBlockChat,
             ],
-            microservice: AvailableMicroservices::RoomCreator,
+            microservice: AvailableMicroservices::Auth,
         }));
         setup.rt.block_on(async {
             // Connect to events
@@ -212,11 +212,11 @@ mod test_nack {
             })
             .await;
 
-            let atomic_counter_coins = Arc::new(AtomicUsize::new(0));
+            let atomic_counter_social = Arc::new(AtomicUsize::new(0));
             let c_barrier = barrier.clone();
-            let c_atomic = atomic_counter_coins.clone();
+            let c_atomic = atomic_counter_social.clone();
             // 2 nacks and then ack!
-            e.on_with_async_handler(MicroserviceEvent::CoinsSendEmail, move |handler| {
+            e.on_with_async_handler(MicroserviceEvent::SocialBlockChat, move |handler| {
                 let count = c_atomic.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
                 let barrier = c_barrier.clone();
 
@@ -224,14 +224,14 @@ mod test_nack {
 
                     // Assert in consume and nack consume. En nack se tiene que pasar de nuevo estas props, chequear "publish_requeue"
                     let publisher_microservice = handler.publisher_microservice();
-                    assert_eq!(publisher_microservice, "room-creator");
+                    assert_eq!(publisher_microservice, "auth");
                     let event_id = handler.event_id();
                     assert!(uuid::Uuid::parse_str(event_id).is_ok());
 
                     if count == 2 {
-                        let p: CoinsSendEmailPayload =
+                        let p: SocialBlockChatPayload =
                             handler.parse_payload().expect("Failed to parse payload");
-                        assert_eq!(p.coins, 400);
+                        assert_eq!(p.user_to_block_id, "blocked_user_456");
                         handler.ack().await.expect("Failed to ack");
                         barrier.wait().await;
                         return;
@@ -250,11 +250,9 @@ mod test_nack {
                 })
                 .await
                 .expect("Failed to publish event");
-            RabbitMQClient::publish_event(CoinsSendEmailPayload {
+            RabbitMQClient::publish_event(SocialBlockChatPayload {
                     user_id: "123".to_string(),
-                    email_type: "email".to_string(),
-                    email: "my_email@email.com".to_string(),
-                    coins: 400,
+                    user_to_block_id: "blocked_user_456".to_string(),
                 })
                 .await
                 .expect("Failed to publish event");
@@ -267,7 +265,7 @@ mod test_nack {
                 4
             );
             assert_eq!(
-                atomic_counter_coins.load(std::sync::atomic::Ordering::SeqCst),
+                atomic_counter_social.load(std::sync::atomic::Ordering::SeqCst),
                 3
             );
             //because fetch_add, returns and adds
