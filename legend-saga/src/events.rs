@@ -521,6 +521,7 @@ pub struct LegendRankingsParticipationRewardEventPayload {
 impl PayloadEvent for LegendRankingsParticipationRewardEventPayload {
     fn event_type(&self) -> MicroserviceEvent {
         MicroserviceEvent::LegendRankingsParticipationReward
+    }
 }
 
 // ********** BILLING ************** //
