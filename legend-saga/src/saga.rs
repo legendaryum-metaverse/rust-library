@@ -40,22 +40,6 @@ pub enum StepCommand {
     #[serde(rename = "crypto_reward:transfer_reward_to_winners")]
     TransferRewardToWinners,
 
-    // Coins commands
-    #[strum(serialize = "resource_purchased:deduct_coins")]
-    #[serde(rename = "resource_purchased:deduct_coins")]
-    ResourcePurchasedDeductCoins,
-    #[strum(serialize = "rankings_users_reward:reward_coins")]
-    #[serde(rename = "rankings_users_reward:reward_coins")]
-    RankingsRewardCoins,
-
-    // RoomInventory commands
-    #[strum(serialize = "resource_purchased:save_purchased_resource")]
-    #[serde(rename = "resource_purchased:save_purchased_resource")]
-    ResourcePurchasedSavePurchasedResource,
-
-    // RoomCreator commands
-    UpdateIslandRoomTemplate,
-
     // Showcase commands
     RandomizeIslandPvImage,
 
