@@ -27,6 +27,7 @@ pub enum AvailableMicroservices {
     Social,
     Storage,
     AuditEda,
+    Billing,
 }
 
 #[derive(Error, Debug)]
