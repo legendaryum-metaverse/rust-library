@@ -65,6 +65,25 @@ pub enum MicroserviceEvent {
     LegendRankingsIntermediateReward,
     #[strum(serialize = "legend_rankings.participation_reward")]
     LegendRankingsParticipationReward,
+    // Billing events - Payment and subscription domain events (No Stripe leakage)
+    #[strum(serialize = "billing.payment_created")]
+    BillingPaymentCreated,
+    #[strum(serialize = "billing.payment_succeeded")]
+    BillingPaymentSucceeded,
+    #[strum(serialize = "billing.payment_failed")]
+    BillingPaymentFailed,
+    #[strum(serialize = "billing.payment_refunded")]
+    BillingPaymentRefunded,
+    #[strum(serialize = "billing.subscription_created")]
+    BillingSubscriptionCreated,
+    #[strum(serialize = "billing.subscription_updated")]
+    BillingSubscriptionUpdated,
+    #[strum(serialize = "billing.subscription_renewed")]
+    BillingSubscriptionRenewed,
+    #[strum(serialize = "billing.subscription_canceled")]
+    BillingSubscriptionCanceled,
+    #[strum(serialize = "billing.subscription_expired")]
+    BillingSubscriptionExpired,
 }
 
 pub trait PayloadEvent {
@@ -502,6 +521,180 @@ pub struct LegendRankingsParticipationRewardEventPayload {
 impl PayloadEvent for LegendRankingsParticipationRewardEventPayload {
     fn event_type(&self) -> MicroserviceEvent {
         MicroserviceEvent::LegendRankingsParticipationReward
+    }
+}
+
+// ********** BILLING ************** //
+
+/// Payload for billing.payment.created event
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct BillingPaymentCreatedPayload {
+    pub payment_id: String,
+    pub user_id: String,
+    pub amount: i64,
+    pub currency: String,
+    pub status: String, // "pending" | "processing"
+    pub metadata: HashMap<String, String>,
+    pub occurred_at: String,
+}
+
+impl PayloadEvent for BillingPaymentCreatedPayload {
+    fn event_type(&self) -> MicroserviceEvent {
+        MicroserviceEvent::BillingPaymentCreated
+    }
+}
+
+/// Payload for billing.payment.succeeded event
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct BillingPaymentSucceededPayload {
+    pub payment_id: String,
+    pub user_id: String,
+    pub amount: i64,
+    pub currency: String,
+    pub metadata: HashMap<String, String>,
+    pub occurred_at: String,
+}
+
+impl PayloadEvent for BillingPaymentSucceededPayload {
+    fn event_type(&self) -> MicroserviceEvent {
+        MicroserviceEvent::BillingPaymentSucceeded
+    }
+}
+
+/// Payload for billing.payment.failed event
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct BillingPaymentFailedPayload {
+    pub payment_id: String,
+    pub user_id: String,
+    pub amount: i64,
+    pub currency: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub failure_reason: Option<String>,
+    pub metadata: HashMap<String, String>,
+    pub occurred_at: String,
+}
+
+impl PayloadEvent for BillingPaymentFailedPayload {
+    fn event_type(&self) -> MicroserviceEvent {
+        MicroserviceEvent::BillingPaymentFailed
+    }
+}
+
+/// Payload for billing.payment.refunded event
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct BillingPaymentRefundedPayload {
+    pub payment_id: String,
+    pub user_id: String,
+    pub amount: i64,
+    pub refunded_amount: i64,
+    pub currency: String,
+    pub metadata: HashMap<String, String>,
+    pub occurred_at: String,
+}
+
+impl PayloadEvent for BillingPaymentRefundedPayload {
+    fn event_type(&self) -> MicroserviceEvent {
+        MicroserviceEvent::BillingPaymentRefunded
+    }
+}
+
+/// Payload for billing.subscription.created event
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct BillingSubscriptionCreatedPayload {
+    pub subscription_id: String,
+    pub user_id: String,
+    pub plan_id: String,
+    pub plan_slug: String,
+    pub status: String, // "pending" | "active" | "trialing"
+    pub period_start: String,
+    pub period_end: String,
+    pub occurred_at: String,
+}
+
+impl PayloadEvent for BillingSubscriptionCreatedPayload {
+    fn event_type(&self) -> MicroserviceEvent {
+        MicroserviceEvent::BillingSubscriptionCreated
+    }
+}
+
+/// Payload for billing.subscription.updated event
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct BillingSubscriptionUpdatedPayload {
+    pub subscription_id: String,
+    pub user_id: String,
+    pub plan_id: String,
+    pub plan_slug: String,
+    pub status: String, // "active" | "past_due" | "unpaid" | "paused" | "trialing"
+    pub cancel_at_period_end: bool,
+    pub period_start: String,
+    pub period_end: String,
+    pub occurred_at: String,
+}
+
+impl PayloadEvent for BillingSubscriptionUpdatedPayload {
+    fn event_type(&self) -> MicroserviceEvent {
+        MicroserviceEvent::BillingSubscriptionUpdated
+    }
+}
+
+/// Payload for billing.subscription.renewed event
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct BillingSubscriptionRenewedPayload {
+    pub subscription_id: String,
+    pub user_id: String,
+    pub plan_id: String,
+    pub plan_slug: String,
+    pub period_start: String,
+    pub period_end: String,
+    pub occurred_at: String,
+}
+
+impl PayloadEvent for BillingSubscriptionRenewedPayload {
+    fn event_type(&self) -> MicroserviceEvent {
+        MicroserviceEvent::BillingSubscriptionRenewed
+    }
+}
+
+/// Payload for billing.subscription.canceled event
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct BillingSubscriptionCanceledPayload {
+    pub subscription_id: String,
+    pub user_id: String,
+    pub plan_id: String,
+    pub plan_slug: String,
+    pub canceled_at: String,
+    pub occurred_at: String,
+}
+
+impl PayloadEvent for BillingSubscriptionCanceledPayload {
+    fn event_type(&self) -> MicroserviceEvent {
+        MicroserviceEvent::BillingSubscriptionCanceled
+    }
+}
+
+/// Payload for billing.subscription.expired event
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct BillingSubscriptionExpiredPayload {
+    pub subscription_id: String,
+    pub user_id: String,
+    pub plan_id: String,
+    pub plan_slug: String,
+    pub expired_at: String,
+    pub occurred_at: String,
+}
+
+impl PayloadEvent for BillingSubscriptionExpiredPayload {
+    fn event_type(&self) -> MicroserviceEvent {
+        MicroserviceEvent::BillingSubscriptionExpired
     }
 }
 
