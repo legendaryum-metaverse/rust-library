@@ -48,11 +48,6 @@ pub enum StepCommand {
 
     // Storage commands
     UploadFile,
-
-    // Billing commands
-    RefundPayment,
-    CancelSubscription,
-    CreateSubscriptionSchedule,
 }
 
 #[derive(

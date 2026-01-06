@@ -18,7 +18,9 @@ use std::sync::RwLock as StdRwLock;
 pub enum AvailableMicroservices {
     TestImage,
     TestMint,
+    AuditEda,
     Auth,
+    Billing,
     Blockchain,
     Missions,
     Rankings,
@@ -26,8 +28,6 @@ pub enum AvailableMicroservices {
     Showcase,
     Social,
     Storage,
-    AuditEda,
-    Billing,
 }
 
 #[derive(Error, Debug)]

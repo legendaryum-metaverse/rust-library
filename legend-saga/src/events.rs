@@ -66,23 +66,23 @@ pub enum MicroserviceEvent {
     #[strum(serialize = "legend_rankings.participation_reward")]
     LegendRankingsParticipationReward,
     // Billing events - Payment and subscription domain events (No Stripe leakage)
-    #[strum(serialize = "billing.payment.created")]
+    #[strum(serialize = "billing.payment_created")]
     BillingPaymentCreated,
-    #[strum(serialize = "billing.payment.succeeded")]
+    #[strum(serialize = "billing.payment_succeeded")]
     BillingPaymentSucceeded,
-    #[strum(serialize = "billing.payment.failed")]
+    #[strum(serialize = "billing.payment_failed")]
     BillingPaymentFailed,
-    #[strum(serialize = "billing.payment.refunded")]
+    #[strum(serialize = "billing.payment_refunded")]
     BillingPaymentRefunded,
-    #[strum(serialize = "billing.subscription.created")]
+    #[strum(serialize = "billing.subscription_created")]
     BillingSubscriptionCreated,
-    #[strum(serialize = "billing.subscription.updated")]
+    #[strum(serialize = "billing.subscription_updated")]
     BillingSubscriptionUpdated,
-    #[strum(serialize = "billing.subscription.renewed")]
+    #[strum(serialize = "billing.subscription_renewed")]
     BillingSubscriptionRenewed,
-    #[strum(serialize = "billing.subscription.canceled")]
+    #[strum(serialize = "billing.subscription_canceled")]
     BillingSubscriptionCanceled,
-    #[strum(serialize = "billing.subscription.expired")]
+    #[strum(serialize = "billing.subscription_expired")]
     BillingSubscriptionExpired,
 }
 
