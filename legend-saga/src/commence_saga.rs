@@ -10,7 +10,6 @@ use crate::connection::{get_or_init_publish_channel, RabbitMQClient, RabbitMQErr
 #[strum(serialize_all = "snake_case")]
 #[serde(rename_all = "snake_case")]
 pub enum SagaTitle {
-    PurchaseResourceFlow,
     TransferCryptoRewardToMissionWinner,
     TransferCryptoRewardToRankingWinners
 }
@@ -20,19 +19,6 @@ pub trait PayloadCommenceSaga {
 }
 
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct PurchaseResourceFlowPayload {
-    pub user_id: String,
-    pub resource_id: String,
-    pub price: i32,
-    pub quantity: i32,
-}
-impl PayloadCommenceSaga for PurchaseResourceFlowPayload {
-    fn saga_title(&self) -> SagaTitle {
-        SagaTitle::PurchaseResourceFlow
-    }
-}
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -122,14 +108,13 @@ impl RabbitMQClient {
 #[cfg(test)]
 mod commence {
     use crate::commence_saga::{
-        CommenceSaga, CompletedCryptoRanking, CryptoRankingWinners, PurchaseResourceFlowPayload,
-        SagaTitle, TransferCryptoRewardToRankingWinnersPayload,
+        CommenceSaga, CompletedCryptoRanking, CryptoRankingWinners,
+        SagaTitle, TransferCryptoRewardToMissionWinnerPayload, TransferCryptoRewardToRankingWinnersPayload,
     };
     use crate::queue_consumer_props::Queue;
     use crate::test::setup::TestSetup;
     use futures_lite::StreamExt;
     use lapin::options::{BasicConsumeOptions};
-    use serde_json::json;
     use std::time::Duration;
     use crate::connection::{RabbitMQClient};
 
@@ -139,33 +124,29 @@ mod commence {
         let setup = TestSetup::new(None);
         setup.rt.block_on(async {
             let user_id = "user1233";
+            let wallet_address = "0xabc123";
+            let reward = "50";
 
-            let json_payload = json!(
-                {
-                    "userId": user_id,
-                    "resourceId": "resource123",
-                    "price": 100,
-                    "quantity": 1
-                }
-            );
-
-                // Para que este micro pueda realizar pasos del saga y realizar commence_saga ops las queue's deben existir, no es responsabilidad
-                // de los micros crear estos recursos, el micro "transactional" debe crear estos recursos -> "queue.CommenceSaga" en commenceSagaListener
-                // y "queue.ReplyToSaga" en startGlobalSagaStepListener
+            // Para que este micro pueda realizar pasos del saga y realizar commence_saga ops las queue's deben existir, no es responsabilidad
+            // de los micros crear estos recursos, el micro "transactional" debe crear estos recursos -> "queue.CommenceSaga" en commenceSagaListener
+            // y "queue.ReplyToSaga" en startGlobalSagaStepListener
 
             // The transactional microservice receives the message and processes it
             let mut consumer = setup
                 .client
                 // Simulando "consumo", "commenceSagaListener" se encuentra implementado en TS y es el responsable de crear la queue.
-                .consume_messages::<CommenceSaga<PurchaseResourceFlowPayload>>(
+                .consume_messages::<CommenceSaga<TransferCryptoRewardToMissionWinnerPayload>>(
                     Queue::COMMENCE_SAGA,
                     BasicConsumeOptions::default(),
                 )
                 .await
                 .expect("Failed to create consumer");
 
-            let payload: PurchaseResourceFlowPayload =
-                serde_json::from_value(json_payload).unwrap();
+            let payload = TransferCryptoRewardToMissionWinnerPayload {
+                wallet_address: wallet_address.to_string(),
+                user_id: user_id.to_string(),
+                reward: reward.to_string(),
+            };
 
             RabbitMQClient::commence_saga(payload).await.unwrap();
 
@@ -176,7 +157,7 @@ mod commence {
                 .expect("Error in received message");
             assert_eq!(
                 received_message.title,
-                SagaTitle::PurchaseResourceFlow,
+                SagaTitle::TransferCryptoRewardToMissionWinner,
                 "Received saga title should match sent title"
             );
             assert_eq!(

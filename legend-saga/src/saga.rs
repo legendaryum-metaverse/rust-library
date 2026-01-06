@@ -40,9 +40,6 @@ pub enum StepCommand {
     #[serde(rename = "crypto_reward:transfer_reward_to_winners")]
     TransferRewardToWinners,
 
-    // Showcase commands
-    RandomizeIslandPvImage,
-
     // Social commands
     #[strum(serialize = "update_user:image")]
     #[serde(rename = "update_user:image")]
