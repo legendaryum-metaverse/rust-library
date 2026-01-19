@@ -22,6 +22,7 @@ pub enum AvailableMicroservices {
     Auth,
     Billing,
     Blockchain,
+    Events,
     Missions,
     Rankings,
     SendEmail,
