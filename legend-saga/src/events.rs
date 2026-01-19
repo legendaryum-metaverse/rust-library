@@ -84,6 +84,25 @@ pub enum MicroserviceEvent {
     BillingSubscriptionCanceled,
     #[strum(serialize = "billing.subscription_expired")]
     BillingSubscriptionExpired,
+    // Legend Events - Event and registration domain events
+    #[strum(serialize = "legend_events.new_event_created")]
+    LegendEventsNewEventCreated,
+    #[strum(serialize = "legend_events.event_started")]
+    LegendEventsEventStarted,
+    #[strum(serialize = "legend_events.event_ended")]
+    LegendEventsEventEnded,
+    #[strum(serialize = "legend_events.player_registered")]
+    LegendEventsPlayerRegistered,
+    #[strum(serialize = "legend_events.player_joined_waitlist")]
+    LegendEventsPlayerJoinedWaitlist,
+    #[strum(serialize = "legend_events.score_submitted")]
+    LegendEventsScoreSubmitted,
+    #[strum(serialize = "legend_events.events_finished")]
+    LegendEventsEventsFinished,
+    #[strum(serialize = "legend_events.intermediate_reward")]
+    LegendEventsIntermediateReward,
+    #[strum(serialize = "legend_events.participation_reward")]
+    LegendEventsParticipationReward,
 }
 
 pub trait PayloadEvent {
@@ -695,6 +714,189 @@ pub struct BillingSubscriptionExpiredPayload {
 impl PayloadEvent for BillingSubscriptionExpiredPayload {
     fn event_type(&self) -> MicroserviceEvent {
         MicroserviceEvent::BillingSubscriptionExpired
+    }
+}
+
+// ********** LEGEND EVENTS ************** //
+
+/// Payload for legend_events.new_event_created event
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct LegendEventsNewEventCreatedPayload {
+    pub event_id: i32,
+    pub title: String,
+    pub description: String,
+    pub author_email: String,
+    pub reward_type: Option<String>,
+    pub start_date: String,
+    pub end_date: String,
+    pub max_players: Option<i32>,
+    pub ticket_price_usd: Option<f32>,
+    pub is_free_tournament: bool,
+    /// Optional notification config (JSON) to enrich email templates
+    pub notification_config: Option<NotificationConfig>,
+}
+
+impl PayloadEvent for LegendEventsNewEventCreatedPayload {
+    fn event_type(&self) -> MicroserviceEvent {
+        MicroserviceEvent::LegendEventsNewEventCreated
+    }
+}
+
+/// Payload for legend_events.event_started event
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct LegendEventsEventStartedPayload {
+    pub event_id: i32,
+    pub title: String,
+    pub started_at: String,
+}
+
+impl PayloadEvent for LegendEventsEventStartedPayload {
+    fn event_type(&self) -> MicroserviceEvent {
+        MicroserviceEvent::LegendEventsEventStarted
+    }
+}
+
+/// Payload for legend_events.event_ended event
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct LegendEventsEventEndedPayload {
+    pub event_id: i32,
+    pub title: String,
+    pub ended_at: String,
+    pub total_participants: i32,
+}
+
+impl PayloadEvent for LegendEventsEventEndedPayload {
+    fn event_type(&self) -> MicroserviceEvent {
+        MicroserviceEvent::LegendEventsEventEnded
+    }
+}
+
+/// Payload for legend_events.player_registered event
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct LegendEventsPlayerRegisteredPayload {
+    pub event_id: i32,
+    pub user_id: String,
+    pub payment_id: Option<String>,
+    pub amount_paid: Option<f32>,
+    pub is_free: bool,
+    pub registered_at: String,
+}
+
+impl PayloadEvent for LegendEventsPlayerRegisteredPayload {
+    fn event_type(&self) -> MicroserviceEvent {
+        MicroserviceEvent::LegendEventsPlayerRegistered
+    }
+}
+
+/// Payload for legend_events.player_joined_waitlist event
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct LegendEventsPlayerJoinedWaitlistPayload {
+    pub event_id: i32,
+    pub user_id: String,
+    pub position: i32,
+    pub joined_at: String,
+}
+
+impl PayloadEvent for LegendEventsPlayerJoinedWaitlistPayload {
+    fn event_type(&self) -> MicroserviceEvent {
+        MicroserviceEvent::LegendEventsPlayerJoinedWaitlist
+    }
+}
+
+/// Payload for legend_events.score_submitted event
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct LegendEventsScoreSubmittedPayload {
+    pub event_id: i32,
+    pub user_id: String,
+    pub score: f64,
+    pub total_score: f64,
+    pub match_id: Option<String>,
+    pub submitted_at: String,
+}
+
+impl PayloadEvent for LegendEventsScoreSubmittedPayload {
+    fn event_type(&self) -> MicroserviceEvent {
+        MicroserviceEvent::LegendEventsScoreSubmitted
+    }
+}
+
+/// Represents a completed event with its winners
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct CompletedEvent {
+    pub event_id: i32,
+    pub title: String,
+    pub description: String,
+    pub author_email: String,
+    pub ends_at: String,
+    pub reward: Option<String>,
+    pub reward_type: Option<String>,
+    pub winners: Vec<EventWinner>,
+    /// Optional notification config forwarded from event
+    pub notification_config: Option<serde_json::Value>,
+}
+
+/// Represents a winner in an event
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct EventWinner {
+    pub user_id: String,
+    pub position: i32,
+    pub score: f64,
+}
+
+/// Payload for legend_events.events_finished event
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct LegendEventsEventsFinishedPayload {
+    pub completed_events: Vec<CompletedEvent>,
+}
+
+impl PayloadEvent for LegendEventsEventsFinishedPayload {
+    fn event_type(&self) -> MicroserviceEvent {
+        MicroserviceEvent::LegendEventsEventsFinished
+    }
+}
+
+/// Payload for legend_events.intermediate_reward event
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct LegendEventsIntermediateRewardPayload {
+    pub user_id: String,
+    pub event_id: i32,
+    pub intermediate_reward_type: String,
+    pub reward_config: serde_json::Value,
+    pub template_name: String,
+    pub template_data: serde_json::Value,
+}
+
+impl PayloadEvent for LegendEventsIntermediateRewardPayload {
+    fn event_type(&self) -> MicroserviceEvent {
+        MicroserviceEvent::LegendEventsIntermediateReward
+    }
+}
+
+/// Payload for legend_events.participation_reward event
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct LegendEventsParticipationRewardPayload {
+    pub user_id: String,
+    pub event_id: i32,
+    pub participation_reward_type: String,
+    pub reward_config: serde_json::Value,
+    pub template_name: String,
+    pub template_data: serde_json::Value,
+}
+
+impl PayloadEvent for LegendEventsParticipationRewardPayload {
+    fn event_type(&self) -> MicroserviceEvent {
+        MicroserviceEvent::LegendEventsParticipationReward
     }
 }
 
