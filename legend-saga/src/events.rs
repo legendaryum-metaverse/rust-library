@@ -248,7 +248,7 @@ impl PayloadEvent for LegendMissionsMissionFinishedEventPayload {
 #[serde(rename_all = "camelCase")]
 pub struct RankingWinners {
     pub user_id: String,
-    pub reward: i32,
+    pub reward: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
