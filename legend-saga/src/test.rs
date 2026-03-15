@@ -40,7 +40,7 @@ pub(crate) mod setup {
     use lapin::BasicProperties;
     use rand::distr::StandardUniform;
     use rand::prelude::Distribution;
-    use rand::Rng;
+    use rand::{Rng, RngExt};
     use serde::de::DeserializeOwned;
     use serde::Serialize;
     use std::env;
