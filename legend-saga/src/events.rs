@@ -61,6 +61,14 @@ pub enum MicroserviceEvent {
     SocialUpdatedUser,
     #[strum(serialize = "legend_rankings.new_ranking_created")]
     LegendRankingsNewRankingCreated,
+    #[strum(serialize = "legend_rankings.ranking_submitted_for_review")]
+    LegendRankingsRankingSubmittedForReview,
+    #[strum(serialize = "legend_rankings.ranking_approved")]
+    LegendRankingsRankingApproved,
+    #[strum(serialize = "legend_rankings.ranking_rejected")]
+    LegendRankingsRankingRejected,
+    #[strum(serialize = "legend_rankings.ranking_activated")]
+    LegendRankingsRankingActivated,
     #[strum(serialize = "legend_rankings.intermediate_reward")]
     LegendRankingsIntermediateReward,
     #[strum(serialize = "legend_rankings.participation_reward")]
@@ -506,6 +514,66 @@ pub struct LegendRankingsNewRankingCreatedEventPayload {
 impl PayloadEvent for LegendRankingsNewRankingCreatedEventPayload {
     fn event_type(&self) -> MicroserviceEvent {
         MicroserviceEvent::LegendRankingsNewRankingCreated
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct LegendRankingsRankingSubmittedForReviewEventPayload {
+    pub ranking_id: i32,
+    pub title: String,
+    pub author_email: String,
+    pub created_at: String,
+}
+
+impl PayloadEvent for LegendRankingsRankingSubmittedForReviewEventPayload {
+    fn event_type(&self) -> MicroserviceEvent {
+        MicroserviceEvent::LegendRankingsRankingSubmittedForReview
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct LegendRankingsRankingApprovedEventPayload {
+    pub ranking_id: i32,
+    pub title: String,
+    pub author_email: String,
+    pub start_at: String,
+}
+
+impl PayloadEvent for LegendRankingsRankingApprovedEventPayload {
+    fn event_type(&self) -> MicroserviceEvent {
+        MicroserviceEvent::LegendRankingsRankingApproved
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct LegendRankingsRankingRejectedEventPayload {
+    pub ranking_id: i32,
+    pub title: String,
+    pub author_email: String,
+    pub reasons: String,
+}
+
+impl PayloadEvent for LegendRankingsRankingRejectedEventPayload {
+    fn event_type(&self) -> MicroserviceEvent {
+        MicroserviceEvent::LegendRankingsRankingRejected
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct LegendRankingsRankingActivatedEventPayload {
+    pub ranking_id: i32,
+    pub title: String,
+    pub author_email: String,
+    pub start_at: String,
+}
+
+impl PayloadEvent for LegendRankingsRankingActivatedEventPayload {
+    fn event_type(&self) -> MicroserviceEvent {
+        MicroserviceEvent::LegendRankingsRankingActivated
     }
 }
 
