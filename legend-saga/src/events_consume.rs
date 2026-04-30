@@ -266,9 +266,7 @@ impl RabbitMQClient {
         let valid_events: HashSet<_> = MicroserviceEvent::iter().collect();
 
         let event_values: Vec<MicroserviceEvent> = headers
-            .inner()
-            .iter()
-            .filter_map(|(_, value)| {
+            .inner().values().filter_map(|value| {
                 if let AMQPValue::LongString(s) = value {
                     let event_str = s.to_string();
                     MicroserviceEvent::from_str(&event_str).ok()
