@@ -29,6 +29,7 @@ pub enum AvailableMicroservices {
     Showcase,
     Social,
     Storage,
+    LegendGameAnalytics,
 }
 
 #[derive(Error, Debug)]
