@@ -59,6 +59,12 @@ pub enum MicroserviceEvent {
     SocialUnblockChat,
     #[strum(serialize = "social.updated_user")]
     SocialUpdatedUser,
+    #[strum(serialize = "social.country_created")]
+    SocialCountryCreated,
+    #[strum(serialize = "social.country_updated")]
+    SocialCountryUpdated,
+    #[strum(serialize = "social.country_deleted")]
+    SocialCountryDeleted,
     #[strum(serialize = "legend_rankings.new_ranking_created")]
     LegendRankingsNewRankingCreated,
     #[strum(serialize = "legend_rankings.ranking_submitted_for_review")]
@@ -486,6 +492,51 @@ pub struct SocialUnblockChatPayload {
 impl PayloadEvent for SocialUnblockChatPayload {
     fn event_type(&self) -> MicroserviceEvent {
         MicroserviceEvent::SocialUnblockChat
+    }
+}
+
+/// Payload for social.country_created event. Source of truth lives in social;
+/// consumers upsert their local projection keyed by `code`.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct SocialCountryCreatedPayload {
+    pub code: String,
+    pub name: String,
+    pub is_enabled: bool,
+}
+
+impl PayloadEvent for SocialCountryCreatedPayload {
+    fn event_type(&self) -> MicroserviceEvent {
+        MicroserviceEvent::SocialCountryCreated
+    }
+}
+
+/// Payload for social.country_updated event (name and/or isEnabled changed).
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct SocialCountryUpdatedPayload {
+    pub code: String,
+    pub name: String,
+    pub is_enabled: bool,
+}
+
+impl PayloadEvent for SocialCountryUpdatedPayload {
+    fn event_type(&self) -> MicroserviceEvent {
+        MicroserviceEvent::SocialCountryUpdated
+    }
+}
+
+/// Payload for social.country_deleted event. Consumers delete the matching
+/// entry from their local projection.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct SocialCountryDeletedPayload {
+    pub code: String,
+}
+
+impl PayloadEvent for SocialCountryDeletedPayload {
+    fn event_type(&self) -> MicroserviceEvent {
+        MicroserviceEvent::SocialCountryDeleted
     }
 }
 
