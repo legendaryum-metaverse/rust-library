@@ -37,12 +37,16 @@ pub enum MicroserviceEvent {
     LegendMissionsOngoingMission,
     #[strum(serialize = "legend_missions.mission_finished")]
     LegendMissionsMissionFinished,
-    #[strum(serialize = "legend_missions.send_email_crypto_mission_completed")]
-    LegendMissionsSendEmailCryptoMissionCompleted,
+    #[strum(serialize = "legend_missions.mission_approved")]
+    LegendMissionsMissionApproved,
+    #[strum(serialize = "legend_missions.mission_rejected")]
+    LegendMissionsMissionRejected,
+    #[strum(serialize = "legend_missions.mission_activated")]
+    LegendMissionsMissionActivated,
     #[strum(serialize = "legend_missions.send_email_code_exchange_mission_completed")]
     LegendMissionsSendEmailCodeExchangeMissionCompleted,
-    #[strum(serialize = "legend_missions.send_email_nft_mission_completed")]
-    LegendMissionsSendEmailNftMissionCompleted,
+    #[strum(serialize = "legend_missions.send_email_gift_card_mission_completed")]
+    LegendMissionsSendEmailGiftCardMissionCompleted,
     #[strum(serialize = "legend_rankings.rankings_finished")]
     LegendRankingsRankingsFinished,
     #[strum(serialize = "legend_showcase.product_virtual_deleted")]
@@ -205,20 +209,48 @@ impl PayloadEvent for AuthBlockedUserPayload {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct LegendMissionsNewMissionCreatedEventPayload {
+    pub mission_id: i32,
     pub title: String,
     pub author: String,
     pub author_email: String,
-    pub reward: i32,
+    pub reward_kind: String,
     pub start_date: String,
     pub end_date: String,
-    pub max_players_claiming_reward: i32,
-    pub time_to_reward: i32,
-    pub notification_config: Option<NotificationConfig>,
 }
 
 impl PayloadEvent for LegendMissionsNewMissionCreatedEventPayload {
     fn event_type(&self) -> MicroserviceEvent {
         MicroserviceEvent::LegendMissionsNewMissionCreated
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct LegendMissionsMissionApprovedEventPayload {
+    pub mission_id: i32,
+    pub title: String,
+    pub author_email: String,
+    pub start_date: String,
+}
+
+impl PayloadEvent for LegendMissionsMissionApprovedEventPayload {
+    fn event_type(&self) -> MicroserviceEvent {
+        MicroserviceEvent::LegendMissionsMissionApproved
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct LegendMissionsMissionRejectedEventPayload {
+    pub mission_id: i32,
+    pub title: String,
+    pub author_email: String,
+    pub admin_notes: String,
+}
+
+impl PayloadEvent for LegendMissionsMissionRejectedEventPayload {
+    fn event_type(&self) -> MicroserviceEvent {
+        MicroserviceEvent::LegendMissionsMissionRejected
     }
 }
 
@@ -250,11 +282,43 @@ pub struct MissionFinishedParticipant {
 pub struct LegendMissionsMissionFinishedEventPayload {
     pub mission_title: String,
     pub participants: Vec<MissionFinishedParticipant>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub author: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub author_email: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub total_seats: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub registered_participants: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub reward_kind: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub start_date: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub end_date: Option<String>,
 }
 
 impl PayloadEvent for LegendMissionsMissionFinishedEventPayload {
     fn event_type(&self) -> MicroserviceEvent {
         MicroserviceEvent::LegendMissionsMissionFinished
+    }
+}
+
+/// Emitted by the finalize ticker when an approved mission reaches its start_date
+/// and becomes active. Mirrors the Go and TS library payloads.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct LegendMissionsMissionActivatedEventPayload {
+    pub title: String,
+    pub author: String,
+    pub author_email: String,
+    pub start_date: String,
+    pub end_date: String,
+}
+
+impl PayloadEvent for LegendMissionsMissionActivatedEventPayload {
+    fn event_type(&self) -> MicroserviceEvent {
+        MicroserviceEvent::LegendMissionsMissionActivated
     }
 }
 
@@ -286,27 +350,17 @@ pub struct CompletedRanking {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct LegendMissionsSendEmailCryptoMissionCompletedPayload {
-    pub user_id: String,
-    pub mission_title: String,
-    pub reward: String,
-    pub blockchain_network: String,
-    pub crypto_asset: String,
-}
-
-impl PayloadEvent for LegendMissionsSendEmailCryptoMissionCompletedPayload {
-    fn event_type(&self) -> MicroserviceEvent {
-        MicroserviceEvent::LegendMissionsSendEmailCryptoMissionCompleted
-    }
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
 pub struct LegendMissionsSendEmailCodeExchangeMissionCompletedPayload {
     pub user_id: String,
     pub mission_title: String,
     pub code_value: String,
     pub code_description: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub ecommerce_redeem_url: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub maps_redeem_url: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub template_name: Option<String>,
 }
 
 impl PayloadEvent for LegendMissionsSendEmailCodeExchangeMissionCompletedPayload {
@@ -317,16 +371,22 @@ impl PayloadEvent for LegendMissionsSendEmailCodeExchangeMissionCompletedPayload
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct LegendMissionsSendEmailNftMissionCompletedPayload {
+pub struct LegendMissionsSendEmailGiftCardMissionCompletedPayload {
     pub user_id: String,
     pub mission_title: String,
-    pub nft_contract_address: String,
-    pub nft_token_id: String,
+    pub description: String,
+    pub file_key: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub ecommerce_redeem_url: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub maps_redeem_url: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub template_name: Option<String>,
 }
 
-impl PayloadEvent for LegendMissionsSendEmailNftMissionCompletedPayload {
+impl PayloadEvent for LegendMissionsSendEmailGiftCardMissionCompletedPayload {
     fn event_type(&self) -> MicroserviceEvent {
-        MicroserviceEvent::LegendMissionsSendEmailNftMissionCompleted
+        MicroserviceEvent::LegendMissionsSendEmailGiftCardMissionCompleted
     }
 }
 
