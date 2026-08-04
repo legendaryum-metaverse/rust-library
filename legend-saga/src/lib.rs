@@ -14,6 +14,7 @@ cfg_std! {
     mod fibo;
     mod my_delivery;
     mod nack;
+    pub mod operation;
     mod publish_event;
     mod queue_consumer_props;
     pub mod saga;

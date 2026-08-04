@@ -6,6 +6,7 @@ use lapin::{
 };
 use serde::Serialize;
 use crate::connection::{get_or_init_publish_channel, get_stored_microservice, RabbitMQClient, RabbitMQError};
+use crate::operation::{apply_operation_header, current_operation, operation_headers, with_operation};
 use std::time::{SystemTime, UNIX_EPOCH};
 use tracing::error;
 use uuid::Uuid;
@@ -30,6 +31,7 @@ impl RabbitMQClient {
             AMQPValue::LongString(event_type.as_ref().into()),
         );
         header_event.insert("all-micro".into(), AMQPValue::LongString("yes".into()));
+        apply_operation_header(&mut header_event);
 
         let body = serde_json::to_vec(&payload)?;
 
@@ -62,11 +64,17 @@ impl RabbitMQClient {
             event_id,
         };
 
+        // tokio::spawn drops task-locals, so the operation is captured here and
+        // re-entered inside the spawned task.
+        let operation_id = current_operation();
         // Fire-and-forget: log errors but don't fail the publish operation
         tokio::spawn(async move {
-            if let Err(e) = RabbitMQClient::publish_audit_event(audit_payload).await {
-                error!("Failed to emit audit.published event: {:?}", e);
-            }
+            with_operation(operation_id, async {
+                if let Err(e) = RabbitMQClient::publish_audit_event(audit_payload).await {
+                    error!("Failed to emit audit.published event: {:?}", e);
+                }
+            })
+            .await;
         });
 
         Ok(())
@@ -93,6 +101,7 @@ impl RabbitMQClient {
                 BasicPublishOptions::default(),
                 &body,
                 BasicProperties::default()
+                    .with_headers(operation_headers())
                     .with_content_type("application/json".into())
                     .with_delivery_mode(2), // persistent
             )

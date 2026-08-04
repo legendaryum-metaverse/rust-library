@@ -17,6 +17,7 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use strum::IntoEnumIterator;
 use tracing::{error, info, warn};
 use crate::connection::{RabbitMQClient, RabbitMQError};
+use crate::operation::{operation_from_headers, report_missing_operation, with_operation};
 use uuid::Uuid;
 
 #[derive(Clone)]
@@ -27,11 +28,18 @@ pub struct EventHandler {
     processed_event: String,
     publisher_microservice: String,
     event_id: String,
+    operation_id: Option<String>,
 }
 impl EventHandler {
 
     pub fn publisher_microservice(&self) -> &String {
         &self.publisher_microservice
+    }
+
+    /// The SIPLEI operation the event belongs to. `None` when the publisher did
+    /// not set it, which is expected during the migration window.
+    pub fn operation_id(&self) -> &Option<String> {
+        &self.operation_id
     }
 
     pub fn event_id(&self) -> &String {
@@ -69,11 +77,15 @@ impl EventHandler {
             event_id: self.event_id.clone(),
         };
 
+        let operation_id = self.operation_id.clone();
         // Emit the audit event using the new direct exchange method
         tokio::spawn(async move {
-            if let Err(e) = RabbitMQClient::publish_audit_event(audit_payload).await {
-                error!("Failed to emit audit.processed event: {:?}", e);
-            }
+            with_operation(operation_id, async {
+                if let Err(e) = RabbitMQClient::publish_audit_event(audit_payload).await {
+                    error!("Failed to emit audit.processed event: {:?}", e);
+                }
+            })
+            .await;
         });
 
         Ok(())
@@ -104,10 +116,14 @@ impl EventHandler {
         };
 
         // Emit the audit event (don't fail if audit fails)
+        let operation_id = self.operation_id.clone();
         tokio::spawn(async move {
-            if let Err(e) = RabbitMQClient::publish_audit_event(audit_payload).await {
-                error!("Failed to emit audit.dead_letter event: {:?}", e);
-            }
+            with_operation(operation_id, async {
+                if let Err(e) = RabbitMQClient::publish_audit_event(audit_payload).await {
+                    error!("Failed to emit audit.dead_letter event: {:?}", e);
+                }
+            })
+            .await;
         });
 
         Ok(result)
@@ -142,10 +158,14 @@ impl EventHandler {
         };
 
         // Emit the audit event (don't fail if audit fails)
+        let operation_id = self.operation_id.clone();
         tokio::spawn(async move {
-            if let Err(e) = RabbitMQClient::publish_audit_event(audit_payload).await {
-                error!("Failed to emit audit.dead_letter event: {:?}", e);
-            }
+            with_operation(operation_id, async {
+                if let Err(e) = RabbitMQClient::publish_audit_event(audit_payload).await {
+                    error!("Failed to emit audit.dead_letter event: {:?}", e);
+                }
+            })
+            .await;
         });
 
         Ok(result)
@@ -224,6 +244,11 @@ impl RabbitMQClient {
         let channel = self.events_channel.lock().await;
         let delivery = MyDelivery::new(delivery).with_app_id(publisher_microservice.clone().into()).with_message_id(event_id.clone().into());
 
+        let operation_id = operation_from_headers(&delivery.headers);
+        if operation_id.is_none() {
+            report_missing_operation(self.microservice.as_ref(), event.as_ref());
+        }
+
         let response_channel =
             EventsConsumeChannel::new(channel.clone(), delivery, queue_name.to_string());
 
@@ -241,11 +266,15 @@ impl RabbitMQClient {
             event_id: event_id.clone(),
         };
 
+        let audit_operation_id = operation_id.clone();
         // Emit the audit.received event (don't fail the main flow if audit fails)
         tokio::spawn(async move {
-            if let Err(e) = RabbitMQClient::publish_audit_event(audit_payload).await {
-                error!("Failed to emit audit.received event: {:?}", e);
-            }
+            with_operation(audit_operation_id, async {
+                if let Err(e) = RabbitMQClient::publish_audit_event(audit_payload).await {
+                    error!("Failed to emit audit.received event: {:?}", e);
+                }
+            })
+            .await;
         });
 
         let event_handler = EventHandler {
@@ -255,9 +284,12 @@ impl RabbitMQClient {
             processed_event: event.as_ref().to_string(),
             publisher_microservice,
             event_id,
+            operation_id: operation_id.clone(),
         };
 
-        emitter.emit(*event, event_handler).await;
+        // Running the handler inside the scope makes the operation propagate to
+        // anything it publishes, with no code in the consuming service.
+        with_operation(operation_id, emitter.emit(*event, event_handler)).await;
 
         Ok(())
     }
