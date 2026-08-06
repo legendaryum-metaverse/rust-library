@@ -26,5 +26,8 @@ cfg_std! {
 #[cfg(feature = "events")]
 pub mod events;
 
+#[cfg(feature = "grpc")]
+pub mod grpc;
+
 #[cfg(test)]
 mod test;
