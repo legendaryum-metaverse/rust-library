@@ -31,6 +31,8 @@ pub enum MicroserviceEvent {
     AuthNewUser,
     #[strum(serialize = "auth.blocked_user")]
     AuthBlockedUser,
+    #[strum(serialize = "auth.operation_created")]
+    AuthOperationCreated,
     #[strum(serialize = "legend_missions.new_mission_created")]
     LegendMissionsNewMissionCreated,
     #[strum(serialize = "legend_missions.ongoing_mission")]
@@ -202,6 +204,23 @@ pub struct AuthBlockedUserPayload {
 impl PayloadEvent for AuthBlockedUserPayload {
     fn event_type(&self) -> MicroserviceEvent {
         MicroserviceEvent::AuthBlockedUser
+    }
+}
+
+/// identity_mode is immutable once an operation exists, so this creation-time
+/// event is the only one a consumer needs to build a local
+/// {operation_id -> identity_mode} projection (IDR-01,
+/// MODULO-IDENTITY-RESOLVER.md).
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AuthOperationCreatedPayload {
+    pub operation_id: String,
+    pub identity_mode: String,
+}
+
+impl PayloadEvent for AuthOperationCreatedPayload {
+    fn event_type(&self) -> MicroserviceEvent {
+        MicroserviceEvent::AuthOperationCreated
     }
 }
 
