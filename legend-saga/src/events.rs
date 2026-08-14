@@ -104,6 +104,9 @@ pub enum MicroserviceEvent {
     BillingSubscriptionCanceled,
     #[strum(serialize = "billing.subscription_expired")]
     BillingSubscriptionExpired,
+    // Platform events - Level 1 entitlements (an operation pays SIPLEI)
+    #[strum(serialize = "platform.operation_features_changed")]
+    PlatformOperationFeaturesChanged,
     // Legend Events - Event and registration domain events
     #[strum(serialize = "legend_events.new_event_created")]
     LegendEventsNewEventCreated,
@@ -221,6 +224,22 @@ pub struct AuthOperationCreatedPayload {
 impl PayloadEvent for AuthOperationCreatedPayload {
     fn event_type(&self) -> MicroserviceEvent {
         MicroserviceEvent::AuthOperationCreated
+    }
+}
+
+/// An operation's effective feature set changed (plan assignment or feature
+/// override) — an invalidation signal, not a snapshot. A consumer refetches
+/// the effective set from legend-billing rather than trust a payload that
+/// could drift from the feature schema that lives there.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct PlatformOperationFeaturesChangedPayload {
+    pub operation_id: String,
+}
+
+impl PayloadEvent for PlatformOperationFeaturesChangedPayload {
+    fn event_type(&self) -> MicroserviceEvent {
+        MicroserviceEvent::PlatformOperationFeaturesChanged
     }
 }
 
