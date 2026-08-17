@@ -1,4 +1,5 @@
 use crate::queue_consumer_props::Queue;
+use crate::operation::operation_headers;
 use lapin::{options::BasicPublishOptions, BasicProperties};
 use serde::{Deserialize, Serialize};
 use strum_macros::{AsRefStr, EnumIter, EnumString};
@@ -83,6 +84,7 @@ impl RabbitMQClient {
                 BasicPublishOptions::default(),
                 &body,
                 BasicProperties::default()
+                    .with_headers(operation_headers())
                     .with_delivery_mode(2) // persistent
                     .with_content_type("application/json".into()),
             )

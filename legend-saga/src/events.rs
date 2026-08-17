@@ -31,6 +31,8 @@ pub enum MicroserviceEvent {
     AuthNewUser,
     #[strum(serialize = "auth.blocked_user")]
     AuthBlockedUser,
+    #[strum(serialize = "auth.operation_created")]
+    AuthOperationCreated,
     #[strum(serialize = "legend_missions.new_mission_created")]
     LegendMissionsNewMissionCreated,
     #[strum(serialize = "legend_missions.ongoing_mission")]
@@ -102,6 +104,9 @@ pub enum MicroserviceEvent {
     BillingSubscriptionCanceled,
     #[strum(serialize = "billing.subscription_expired")]
     BillingSubscriptionExpired,
+    // Platform events - Level 1 entitlements (an operation pays SIPLEI)
+    #[strum(serialize = "platform.operation_features_changed")]
+    PlatformOperationFeaturesChanged,
     // Legend Events - Event and registration domain events
     #[strum(serialize = "legend_events.new_event_created")]
     LegendEventsNewEventCreated,
@@ -202,6 +207,39 @@ pub struct AuthBlockedUserPayload {
 impl PayloadEvent for AuthBlockedUserPayload {
     fn event_type(&self) -> MicroserviceEvent {
         MicroserviceEvent::AuthBlockedUser
+    }
+}
+
+/// identity_mode is immutable once an operation exists, so this creation-time
+/// event is the only one a consumer needs to build a local
+/// {operation_id -> identity_mode} projection (IDR-01,
+/// MODULO-IDENTITY-RESOLVER.md).
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AuthOperationCreatedPayload {
+    pub operation_id: String,
+    pub identity_mode: String,
+}
+
+impl PayloadEvent for AuthOperationCreatedPayload {
+    fn event_type(&self) -> MicroserviceEvent {
+        MicroserviceEvent::AuthOperationCreated
+    }
+}
+
+/// An operation's effective feature set changed (plan assignment or feature
+/// override) — an invalidation signal, not a snapshot. A consumer refetches
+/// the effective set from legend-billing rather than trust a payload that
+/// could drift from the feature schema that lives there.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct PlatformOperationFeaturesChangedPayload {
+    pub operation_id: String,
+}
+
+impl PayloadEvent for PlatformOperationFeaturesChangedPayload {
+    fn event_type(&self) -> MicroserviceEvent {
+        MicroserviceEvent::PlatformOperationFeaturesChanged
     }
 }
 

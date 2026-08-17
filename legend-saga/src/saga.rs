@@ -1,6 +1,7 @@
 use crate::emitter::Emitter;
 use crate::my_delivery::MyDelivery;
 use crate::nack::Nack;
+use crate::operation::{operation_from_headers, report_missing_operation, with_operation};
 use crate::queue_consumer_props::Queue;
 use futures_lite::StreamExt;
 use lapin::options::{
@@ -80,6 +81,7 @@ pub struct CommandHandler {
     payload: HashMap<String, Value>,
     #[allow(dead_code)]
     saga_id: i32,
+    operation_id: Option<String>,
 }
 
 impl CommandHandler {
@@ -93,6 +95,12 @@ impl CommandHandler {
 
     pub fn get_payload(&self) -> &HashMap<String, Value> {
         &self.payload
+    }
+
+    /// The operation (tenant) the saga step belongs to, or `None` while a
+    /// publisher predates the header.
+    pub fn operation_id(&self) -> &Option<String> {
+        &self.operation_id
     }
 
     pub async fn ack(&self, payload_for_next_step: Value) -> Result<(), RabbitMQError> {
@@ -127,6 +135,7 @@ struct MicroserviceConsumeChannel {
     queue_name: String,
     step: SagaStep,
     nack: Nack,
+    operation_id: Option<String>,
 }
 
 impl RabbitMQClient {
@@ -179,26 +188,41 @@ impl RabbitMQClient {
         let saga_id = current_step.saga_id;
         let previous_payload = current_step.previous_payload.clone();
 
+        let operation_id = operation_from_headers(&delivery.headers);
+        if operation_id.is_none() {
+            report_missing_operation(current_step.microservice.as_ref(), command.as_ref());
+        }
+
         let response_channel = MicroserviceConsumeChannel::new(
             channel.clone(),
             delivery,
             queue_name.to_string(),
             current_step,
+            operation_id.clone(),
         );
 
         let event_handler = CommandHandler {
             payload: previous_payload,
             channel: response_channel,
             saga_id,
+            operation_id: operation_id.clone(),
         };
 
-        emitter.emit(command, event_handler).await;
+        // Running the handler inside the scope makes the operation propagate to
+        // anything it publishes, with no code in the consuming service.
+        with_operation(operation_id, emitter.emit(command, event_handler)).await;
         Ok(())
     }
 }
 
 impl MicroserviceConsumeChannel {
-    fn new(channel: Channel, delivery: MyDelivery, queue_name: String, step: SagaStep) -> Self {
+    fn new(
+        channel: Channel,
+        delivery: MyDelivery,
+        queue_name: String,
+        step: SagaStep,
+        operation_id: Option<String>,
+    ) -> Self {
         let nack = Nack::new(channel.clone(), delivery.clone(), queue_name.clone());
         Self {
             channel,
@@ -206,6 +230,7 @@ impl MicroserviceConsumeChannel {
             queue_name,
             step,
             nack,
+            operation_id,
         }
     }
     async fn ack(&self, payload_for_next_step: Value) -> Result<(), RabbitMQError> {
@@ -243,7 +268,7 @@ impl MicroserviceConsumeChannel {
         // Para que este micro pueda realizar pasos del saga y realizar commence_saga ops las queue's deben existir, no es responsabilidad
         // de los micros crear estos recursos, el micro "transactional" debe crear estos recursos -> "queue.CommenceSaga" en commenceSagaListener
         // y "queue.ReplyToSaga" en startGlobalSagaStepListener
-        RabbitMQClient::send(Queue::REPLY_TO_SAGA, &step).await?;
+        with_operation(self.operation_id.clone(), RabbitMQClient::send(Queue::REPLY_TO_SAGA, &step)).await?;
 
         self.channel
             .basic_ack(self.delivery.delivery_tag, BasicAckOptions::default())

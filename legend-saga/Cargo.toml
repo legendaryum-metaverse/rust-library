@@ -14,6 +14,9 @@ categories = ["asynchronous", "network-programming"]
 default = ["events", "std"]
 events = ["serde", "strum", "strum_macros", "chrono"]
 std = ["lapin", "tokio", "futures-lite", "thiserror", "serde_json", "tracing", "backoff", "once_cell", "uuid"]
+# gRPC propagation of x-operation-id. Requires `std`: it reads the same
+# task-local operation.rs defines, which lives behind that feature.
+grpc = ["std", "tower", "http", "http-body"]
 
 [dependencies]
 # Versión 3 elimina la api de topology, se sigue en https://legendaryum.atlassian.net/browse/LE-3503
@@ -30,6 +33,9 @@ strum_macros = { version = "0.28.0", optional = true }
 once_cell = { version = "1.21.4", optional = true }
 chrono = { version = "0.4.44", default-features = false, features = ["serde"], optional = true }
 uuid = { version = "1.23", features = ["v7", "serde"], optional = true }
+tower = { version = "0.5", default-features = false, optional = true }
+http = { version = "1", optional = true }
+http-body = { version = "1", optional = true }
 
 [dev-dependencies]
 ctor = "0.12.0"
@@ -37,3 +43,6 @@ rand = "0.10.1"
 tracing-subscriber = "0.3.23"
 futures = "0.3.32"
 tokio = { version = "1.52.1", features = ["macros", "rt-multi-thread"] }
+tower = { version = "0.5", features = ["util"] }
+http-body-util = "0.1"
+bytes = "1"
