@@ -452,6 +452,11 @@ pub struct LegendRankingsBillableParticipantRecordedEventPayload {
     pub operation_id: String,
     pub source_type: String,
     pub source_id: String,
+    // Needed so consumers can dedupe on (operation_id, source_type,
+    // source_id, user_ref) — the same composite key billable_participants
+    // uses — and stay correct under RabbitMQ redelivery instead of
+    // double-counting.
+    pub user_ref: String,
     pub occurred_at: String,
 }
 
