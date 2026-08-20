@@ -850,6 +850,8 @@ pub struct BillingSubscriptionCreatedPayload {
     pub period_start: String,
     pub period_end: String,
     pub occurred_at: String,
+    #[serde(default)]
+    pub features: Vec<String>,
 }
 
 impl PayloadEvent for BillingSubscriptionCreatedPayload {
@@ -871,6 +873,8 @@ pub struct BillingSubscriptionUpdatedPayload {
     pub period_start: String,
     pub period_end: String,
     pub occurred_at: String,
+    #[serde(default)]
+    pub features: Vec<String>,
 }
 
 impl PayloadEvent for BillingSubscriptionUpdatedPayload {
@@ -890,6 +894,8 @@ pub struct BillingSubscriptionRenewedPayload {
     pub period_start: String,
     pub period_end: String,
     pub occurred_at: String,
+    #[serde(default)]
+    pub features: Vec<String>,
 }
 
 impl PayloadEvent for BillingSubscriptionRenewedPayload {
