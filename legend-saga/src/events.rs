@@ -51,6 +51,12 @@ pub enum MicroserviceEvent {
     LegendMissionsSendEmailGiftCardMissionCompleted,
     #[strum(serialize = "legend_rankings.rankings_finished")]
     LegendRankingsRankingsFinished,
+    /// A distinct player's first participation in a ranking was recorded
+    /// (the billable unit — the same player playing 50 times counts once).
+    /// Invalidation signal, not a snapshot: consumers re-fetch the count
+    /// they need rather than trust a total baked into the event.
+    #[strum(serialize = "legend_rankings.billable_participant_recorded")]
+    LegendRankingsBillableParticipantRecorded,
     #[strum(serialize = "legend_showcase.product_virtual_deleted")]
     LegendShowcaseProductVirtualDeleted,
     #[strum(serialize = "legend_showcase.update_allowed_mission_subscription_ids")]
@@ -437,6 +443,21 @@ pub struct LegendRankingsRankingsFinishedEventPayload {
 impl PayloadEvent for LegendRankingsRankingsFinishedEventPayload {
     fn event_type(&self) -> MicroserviceEvent {
         MicroserviceEvent::LegendRankingsRankingsFinished
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct LegendRankingsBillableParticipantRecordedEventPayload {
+    pub operation_id: String,
+    pub source_type: String,
+    pub source_id: String,
+    pub occurred_at: String,
+}
+
+impl PayloadEvent for LegendRankingsBillableParticipantRecordedEventPayload {
+    fn event_type(&self) -> MicroserviceEvent {
+        MicroserviceEvent::LegendRankingsBillableParticipantRecorded
     }
 }
 
