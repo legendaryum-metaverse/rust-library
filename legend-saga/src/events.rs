@@ -33,6 +33,8 @@ pub enum MicroserviceEvent {
     AuthBlockedUser,
     #[strum(serialize = "auth.operation_created")]
     AuthOperationCreated,
+    #[strum(serialize = "auth.operation_snapshot")]
+    AuthOperationSnapshot,
     #[strum(serialize = "legend_missions.new_mission_created")]
     LegendMissionsNewMissionCreated,
     #[strum(serialize = "legend_missions.ongoing_mission")]
@@ -230,6 +232,41 @@ pub struct AuthOperationCreatedPayload {
 impl PayloadEvent for AuthOperationCreatedPayload {
     fn event_type(&self) -> MicroserviceEvent {
         MicroserviceEvent::AuthOperationCreated
+    }
+}
+
+/// The full current state of an operation, published on creation and on every
+/// update. A snapshot, not a diff: applying it is idempotent, so a consumer
+/// keeping a local operations catalog overwrites its row wholesale.
+///
+/// `updated_at` is what makes that safe under redelivery and out-of-order
+/// arrival — a snapshot older than the row already stored is discarded.
+///
+/// `organization_slug` and `client_type` belong to the organization rather
+/// than the operation, and are denormalized here so a consumer does not need a
+/// second round trip to render or group by them.
+///
+/// Fiscal and network identity (tax id, fiscal address, postal code, IP
+/// allowlist) stay out on purpose: this is broadcast to every subscribed
+/// microservice and no consumer of this event needs them.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AuthOperationSnapshotPayload {
+    pub operation_id: String,
+    pub organization_id: String,
+    pub organization_slug: String,
+    pub client_type: String,
+    pub legal_name: String,
+    pub country_code: String,
+    pub currency: String,
+    pub identity_mode: String,
+    pub status: String,
+    pub updated_at: String,
+}
+
+impl PayloadEvent for AuthOperationSnapshotPayload {
+    fn event_type(&self) -> MicroserviceEvent {
+        MicroserviceEvent::AuthOperationSnapshot
     }
 }
 
