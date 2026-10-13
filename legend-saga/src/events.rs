@@ -102,6 +102,8 @@ pub enum MicroserviceEvent {
     BillingPaymentFailed,
     #[strum(serialize = "billing.payment_refunded")]
     BillingPaymentRefunded,
+    #[strum(serialize = "billing.invoice_charge_created")]
+    BillingInvoiceChargeCreated,
     #[strum(serialize = "billing.subscription_created")]
     BillingSubscriptionCreated,
     #[strum(serialize = "billing.subscription_updated")]
@@ -901,6 +903,24 @@ impl PayloadEvent for BillingPaymentRefundedPayload {
     }
 }
 
+/// Payload for billing.invoice_charge_created event
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct BillingInvoiceChargeCreatedPayload {
+    pub charge_id: String,
+    pub user_id: String,
+    pub amount: i64,
+    pub currency: String,
+    pub metadata: HashMap<String, String>,
+    pub occurred_at: String,
+}
+
+impl PayloadEvent for BillingInvoiceChargeCreatedPayload {
+    fn event_type(&self) -> MicroserviceEvent {
+        MicroserviceEvent::BillingInvoiceChargeCreated
+    }
+}
+
 /// Payload for billing.subscription.created event
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -1431,5 +1451,54 @@ mod tests {
             "Second timestamp {} would be before year 2000 if treated as milliseconds",
             timestamp_s
         );
+    }
+
+    #[test]
+    fn test_billing_invoice_charge_created_event() {
+        use std::str::FromStr;
+        use strum::IntoEnumIterator;
+
+        assert_eq!(
+            MicroserviceEvent::BillingInvoiceChargeCreated.as_ref(),
+            "billing.invoice_charge_created"
+        );
+        assert_eq!(
+            MicroserviceEvent::from_str("billing.invoice_charge_created").unwrap(),
+            MicroserviceEvent::BillingInvoiceChargeCreated
+        );
+        assert!(
+            MicroserviceEvent::iter().any(|e| e == MicroserviceEvent::BillingInvoiceChargeCreated)
+        );
+    }
+
+    #[test]
+    fn test_billing_invoice_charge_created_payload_wire_format() {
+        let payload = BillingInvoiceChargeCreatedPayload {
+            charge_id: "c-1".to_string(),
+            user_id: "u-1".to_string(),
+            amount: 1500,
+            currency: "usd".to_string(),
+            metadata: HashMap::from([
+                ("product_type".to_string(), "suggested_game".to_string()),
+                ("product_id".to_string(), "p-1".to_string()),
+            ]),
+            occurred_at: "2026-10-13T00:00:00Z".to_string(),
+        };
+        assert_eq!(
+            payload.event_type(),
+            MicroserviceEvent::BillingInvoiceChargeCreated
+        );
+
+        let value = serde_json::to_value(&payload).unwrap();
+        assert_eq!(value["chargeId"], "c-1");
+        assert_eq!(value["userId"], "u-1");
+        assert_eq!(value["amount"], 1500);
+        assert_eq!(value["currency"], "usd");
+        assert_eq!(value["occurredAt"], "2026-10-13T00:00:00Z");
+        assert_eq!(value["metadata"]["product_id"], "p-1");
+
+        let back: BillingInvoiceChargeCreatedPayload = serde_json::from_value(value).unwrap();
+        assert_eq!(back.charge_id, "c-1");
+        assert_eq!(back.metadata.len(), 2);
     }
 }
